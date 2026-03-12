@@ -8,6 +8,24 @@ export interface ResumeExperience {
   starFormatted?: string;
 }
 
+// Edit state for resume sections
+export interface EditingState {
+  isEditing: boolean;
+  section: 'summary' | 'experience' | 'skills' | 'education' | null;
+  itemIndex: number | null;
+}
+
+// ATS check result
+export interface AtsCheckResult {
+  score: number;
+  issues: Array<{
+    category: string;
+    severity: string;
+    message: string;
+  }>;
+  suggestions: string[];
+}
+
 export interface ResumeEducation {
   school: string;
   degree: string;
@@ -28,6 +46,20 @@ export interface OptimizedResume {
   education: ResumeEducation[];
 }
 
+// JD-based improvement suggestions
+export interface ExperienceSuggestion {
+  type: 'add' | 'emphasize' | 'remove';
+  suggestion: string;
+}
+
+export interface ResumeSuggestion {
+  matchScore: number;
+  gapAnalysis: string;
+  skillGaps: string[];
+  experienceSuggestions: ExperienceSuggestion[];
+  actionPlan: string[];
+}
+
 export interface OptimizeRequest {
   resumeText: string;
   jobDescription?: string;
@@ -44,15 +76,29 @@ export type OptimizeStatus =
   | 'idle'
   | 'parsing'
   | 'analyzing'
+  | 'suggesting'
   | 'optimizing'
   | 'formatting'
   | 'completed'
   | 'error';
 
 export interface StreamChunk {
-  type: 'status' | 'content' | 'error' | 'done';
+  type: 'status' | 'content' | 'error' | 'done' | 'suggestion' | 'ats';
   status?: OptimizeStatus;
   message?: string;
   content?: string;
   data?: OptimizedResume;
+  suggestion?: ResumeSuggestion;
+  atsCheck?: AtsCheckResult;
+  coverLetter?: {
+    subject: string;
+    content: string;
+  };
+  interviewQuestions?: Array<{
+    experience: string;
+    questions: Array<{
+      question: string;
+      keyPoints: string[];
+    }>;
+  }>;
 }

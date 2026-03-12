@@ -1,6 +1,108 @@
 // Resume optimization utilities
 
-import type { OptimizedResume } from '@/types/resume';
+import type { OptimizedResume, ResumeSuggestion } from '@/types/resume';
+
+/**
+ * Parse raw AI response to resume object
+ */
+export function parseSuggestionResponse(rawJson: string): ResumeSuggestion {
+  try {
+    let jsonStr = rawJson.trim();
+
+    // Remove all markdown code blocks
+    jsonStr = jsonStr.replace(/```json\n?/g, '');
+    jsonStr = jsonStr.replace(/```\n?/g, '');
+    jsonStr = jsonStr.replace(/`+/g, '');
+
+    let parsed = null;
+    let parseError = null;
+
+    // Strategy 1: Split by } { and try each part (handles duplicate JSON)
+    const parts = jsonStr.split(/(?<=})\s*(?=\{)/);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+          const testParsed = JSON.parse(trimmed);
+          if (testParsed.matchScore !== undefined || testParsed.gapAnalysis) {
+            parsed = testParsed;
+            break;
+          }
+        } catch (e) {
+          parseError = e;
+        }
+      }
+    }
+
+    // Strategy 2: Try to find JSON with matchScore using bracket matching
+    if (!parsed) {
+      const startIdx = jsonStr.indexOf('"matchScore"');
+      if (startIdx !== -1) {
+        // Find the opening { before matchScore
+        let braceStart = startIdx;
+        while (braceStart > 0 && jsonStr[braceStart] !== '{') {
+          braceStart--;
+        }
+        // Find matching closing }
+        let braceCount = 0;
+        let braceEnd = braceStart;
+        for (let i = braceStart; i < jsonStr.length; i++) {
+          if (jsonStr[i] === '{') braceCount++;
+          if (jsonStr[i] === '}') braceCount--;
+          if (braceCount === 0) {
+            braceEnd = i + 1;
+            break;
+          }
+        }
+        const candidate = jsonStr.slice(braceStart, braceEnd);
+        try {
+          parsed = JSON.parse(candidate);
+        } catch (e) {
+          parseError = e;
+        }
+      }
+    }
+
+    // Strategy 3: Try parsing the whole string if it's a single JSON
+    if (!parsed) {
+      try {
+        const testParsed = JSON.parse(jsonStr);
+        if (testParsed.matchScore !== undefined || testParsed.gapAnalysis) {
+          parsed = testParsed;
+        }
+      } catch (e) {
+        parseError = e;
+      }
+    }
+
+    if (!parsed) {
+      console.error('Raw suggestion response:', jsonStr);
+      console.error('Parse error:', parseError);
+      throw new Error('Invalid JSON response for suggestion');
+    }
+
+    // Validate and sanitize
+    return {
+      matchScore: typeof parsed.matchScore === 'number' ? parsed.matchScore : 0,
+      gapAnalysis: parsed.gapAnalysis || '',
+      skillGaps: Array.isArray(parsed.skillGaps) ? parsed.skillGaps : [],
+      experienceSuggestions: Array.isArray(parsed.experienceSuggestions)
+        ? parsed.experienceSuggestions
+        : [],
+      actionPlan: Array.isArray(parsed.actionPlan) ? parsed.actionPlan : [],
+    };
+  } catch (error) {
+    console.error('Failed to parse suggestion response:', error);
+    // Return empty suggestion on error to not break the flow
+    return {
+      matchScore: 0,
+      gapAnalysis: '无法生成建议',
+      skillGaps: [],
+      experienceSuggestions: [],
+      actionPlan: [],
+    };
+  }
+}
 
 /**
  * Parse raw AI response to resume object

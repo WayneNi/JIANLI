@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { Upload, FileText, X, Loader2 } from 'lucide-react';
+import { Upload, FileText, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -9,6 +9,16 @@ interface UploadZoneProps {
   onFileSelect: (file: File, text: string) => void;
   isLoading: boolean;
 }
+
+const COLORS = {
+  primary: '#1a1f2e',
+  secondary: '#2d3548',
+  accent: '#c9a227',
+  surface: '#faf9f7',
+  surfaceDark: '#f0ede8',
+  success: '#059669',
+  error: '#dc2626',
+};
 
 export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
@@ -20,7 +30,6 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
     async (file: File) => {
       setError(null);
 
-      // Check file type - accept based on extension OR MIME type
       const fileName = file.name.toLowerCase();
       const isPdf = fileName.endsWith('.pdf');
       const isDocx = fileName.endsWith('.docx');
@@ -35,7 +44,6 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
         return;
       }
 
-      // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('文件大小不能超过 5MB');
         return;
@@ -44,7 +52,6 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
       try {
         setIsParsing(true);
 
-        // Send file to server for parsing
         const formData = new FormData();
         formData.append('file', file);
 
@@ -119,17 +126,25 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
 
   if (selectedFile) {
     return (
-      <Card className="border-2 border-green-200 bg-green-50">
+      <Card style={{
+        borderRadius: '8px',
+        border: 'none',
+        backgroundColor: `${COLORS.success}08`,
+        borderLeft: `3px solid ${COLORS.success}`
+      }}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                <FileText className="h-5 w-5 text-green-600" />
+              <div
+                className="flex h-10 w-10 rounded-lg items-center justify-center"
+                style={{ backgroundColor: `${COLORS.success}15` }}
+              >
+                <CheckCircle2 className="h-5 w-5" style={{ color: COLORS.success }} />
               </div>
               <div>
-                <p className="font-medium text-green-800">{selectedFile.name}</p>
-                <p className="text-sm text-green-600">
-                  {(selectedFile.size / 1024).toFixed(1)} KB
+                <p className="font-medium text-sm" style={{ color: COLORS.primary }}>{selectedFile.name}</p>
+                <p className="text-xs" style={{ color: COLORS.secondary }}>
+                  {(selectedFile.size / 1024).toFixed(1)} KB · 已成功解析
                 </p>
               </div>
             </div>
@@ -138,7 +153,7 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
                 variant="ghost"
                 size="icon"
                 onClick={handleClear}
-                className="text-green-700 hover:bg-green-100"
+                className="h-8 w-8"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -151,11 +166,13 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
 
   return (
     <div
-      className={`relative cursor-pointer rounded-lg border-2 border-dashed p-8 transition-colors ${
-        isDragging
-          ? 'border-blue-500 bg-blue-50'
-          : 'border-gray-300 hover:border-gray-400'
-      } ${isProcessing ? 'pointer-events-none opacity-50' : ''}`}
+      className={`relative cursor-pointer rounded-lg border-2 border-dashed p-8 transition-all duration-300 ${
+        isDragging ? 'scale-[1.02]' : ''
+      }`}
+      style={{
+        borderColor: isDragging ? COLORS.accent : COLORS.surfaceDark,
+        backgroundColor: isDragging ? `${COLORS.accent}08` : COLORS.surface,
+      }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -169,21 +186,24 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
       />
 
       <div className="flex flex-col items-center text-center">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+        <div
+          className="mb-4 flex h-14 w-14 items-center justify-center rounded-full transition-transform"
+          style={{ backgroundColor: COLORS.surfaceDark }}
+        >
           {isProcessing ? (
-            <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: COLORS.accent }} />
           ) : (
-            <Upload className="h-6 w-6 text-gray-600" />
+            <Upload className="h-6 w-6" style={{ color: COLORS.secondary }} />
           )}
         </div>
-        <p className="mb-1 font-medium text-gray-700">
+        <p className="mb-1 font-medium" style={{ color: COLORS.primary }}>
           {isProcessing ? '正在解析文件...' : '拖拽文件到此处，或点击选择'}
         </p>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm" style={{ color: COLORS.secondary }}>
           支持 PDF 和 Word (.docx) 文件，最大 5MB
         </p>
         {error && (
-          <p className="mt-3 text-sm font-medium text-red-500">{error}</p>
+          <p className="mt-3 text-sm font-medium" style={{ color: COLORS.error }}>{error}</p>
         )}
       </div>
     </div>

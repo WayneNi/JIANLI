@@ -1,23 +1,5 @@
 import { NextRequest } from 'next/server';
-import { PDFParse } from 'pdf-parse';
-import path from 'path';
-
-// Configure PDF.js worker - use file:// URL format
-const workerPath = path.join(
-  process.cwd(),
-  'node_modules',
-  '.pnpm',
-  'pdf-parse@2.4.5',
-  'node_modules',
-  'pdf-parse',
-  'dist',
-  'worker',
-  'pdf.worker.mjs'
-).replace(/\\/g, '/');
-
-// Convert to file:// URL
-const workerUrl = `file:///${workerPath}`;
-PDFParse.setWorker(workerUrl);
+import { extractRawText } from 'mammoth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,18 +42,53 @@ export async function POST(req: NextRequest) {
     let text = '';
 
     if (isPdf || file.type === 'application/pdf') {
-      // Parse PDF on server
+      // Parse PDF using pdfjs-dist (better Chinese support)
       const arrayBuffer = await file.arrayBuffer();
-      const pdfParser = new PDFParse({ data: arrayBuffer });
-      const result = await pdfParser.getText();
-      text = result.text;
+
+      try {
+        // Dynamic import to avoid build-time evaluation issues
+        const pdfjs = await import('pdfjs-dist');
+
+        // Configure the worker with CDN
+        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+
+        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+        const pdfDocument = await loadingTask.promise;
+
+        const fullText: string[] = [];
+
+        // Extract text from each page
+        for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
+          const page = await pdfDocument.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item) => {
+              if ('str' in item) {
+                return item.str;
+              }
+              return '';
+            })
+            .join(' ');
+          fullText.push(pageText);
+        }
+
+        text = fullText.join('\n\n');
+      } catch (pdfError) {
+        console.error('PDF parsing error:', pdfError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to parse PDF file' }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
     } else if (isDocx || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      // Parse DOCX on server - use Node.js specific import
-      const mammoth = await import('mammoth/lib');
+      // Parse DOCX on server
       const arrayBuffer = await file.arrayBuffer();
       // Convert ArrayBuffer to Buffer for Node.js
       const buffer = Buffer.from(arrayBuffer);
-      const result = await mammoth.extractRawText({ buffer });
+      const result = await extractRawText({ buffer });
       text = result.value;
     }
 
