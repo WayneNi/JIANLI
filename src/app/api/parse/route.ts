@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 import { extractRawText } from 'mammoth';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,15 +44,21 @@ export async function POST(req: NextRequest) {
     let text = '';
 
     if (isPdf || file.type === 'application/pdf') {
-      // Parse PDF using pdfjs-dist (better Chinese support)
-      const arrayBuffer = await file.arrayBuffer();
-
       try {
-        // Dynamic import to avoid build-time evaluation issues
+        // Parse PDF using pdfjs-dist v3 (better Node.js support)
+        console.log('Starting PDF parsing...');
+        const arrayBuffer = await file.arrayBuffer();
+        console.log('ArrayBuffer length:', arrayBuffer.byteLength);
+
+        // Dynamic import
         const pdfjs = await import('pdfjs-dist');
 
-        // Configure the worker with CDN
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+        // For server-side, we need to read the worker file and create a data URL
+        // Use the legacy build which works better in Node.js
+        const workerPath = path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.min.js');
+        const workerCode = fs.readFileSync(workerPath);
+        const workerBase64 = workerCode.toString('base64');
+        pdfjs.GlobalWorkerOptions.workerSrc = `data:application/javascript;base64,${workerBase64}`;
 
         const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
         const pdfDocument = await loadingTask.promise;
@@ -62,7 +70,7 @@ export async function POST(req: NextRequest) {
           const page = await pdfDocument.getPage(pageNum);
           const textContent = await page.getTextContent();
           const pageText = textContent.items
-            .map((item) => {
+            .map((item: any) => {
               if ('str' in item) {
                 return item.str;
               }
@@ -73,10 +81,49 @@ export async function POST(req: NextRequest) {
         }
 
         text = fullText.join('\n\n');
-      } catch (pdfError) {
+
+        // Check if extracted text is empty (likely a scanned/image PDF)
+        if (!text.trim()) {
+          return new Response(
+            JSON.stringify({
+              error: '此PDF文件可能是扫描件或图片格式，无法提取文字。请尝试：\n1. 使用文字版PDF文件\n2. 将图片转换为文字PDF\n3. 手动复制粘贴简历内容'
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        }
+      } catch (pdfError: unknown) {
         console.error('PDF parsing error:', pdfError);
+
+        const errorMessage = pdfError instanceof Error ? pdfError.message : String(pdfError);
+
+        if (errorMessage.includes('NetworkError') || errorMessage.includes('fetch')) {
+          return new Response(
+            JSON.stringify({ error: '网络连接失败，请检查网络后重试' }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
+        if (errorMessage.includes('Invalid PDF') || errorMessage.includes('PDF')) {
+          return new Response(
+            JSON.stringify({ error: 'PDF文件格式无效或已损坏，请确保文件是有效的PDF文档' }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
         return new Response(
-          JSON.stringify({ error: 'Failed to parse PDF file' }),
+          JSON.stringify({
+            error: 'PDF解析失败',
+            details: errorMessage
+          }),
           {
             status: 400,
             headers: { 'Content-Type': 'application/json' },
@@ -94,7 +141,7 @@ export async function POST(req: NextRequest) {
 
     if (!text.trim()) {
       return new Response(
-        JSON.stringify({ error: 'Could not extract text from file' }),
+        JSON.stringify({ error: '无法提取文件内容，请确保文件不是纯图片格式' }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },

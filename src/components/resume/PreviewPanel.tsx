@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect -- Required for streaming data processing */
+
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -15,9 +17,7 @@ import {
   ChevronUp,
   FileText,
   Target,
-  TrendingUp,
   AlertCircle,
-  CheckCircle,
   Lightbulb,
   Edit2,
   Save,
@@ -37,6 +37,7 @@ interface PreviewPanelProps {
   isOptimizing: boolean;
   streamData: StreamChunk[];
   status: OptimizeStatus;
+  resume?: OptimizedResume | null;
 }
 
 const COLORS = {
@@ -54,9 +55,10 @@ export function PreviewPanel({
   isOptimizing,
   streamData,
   status,
+  resume: resumeProp,
 }: PreviewPanelProps) {
   const [optimizedResume, setOptimizedResume] =
-    useState<OptimizedResume | null>(null);
+    useState<OptimizedResume | null>(resumeProp || null);
   const [suggestion, setSuggestion] = useState<ResumeSuggestion | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     experience: true,
@@ -75,12 +77,20 @@ export function PreviewPanel({
   // ATS state
   const [atsCheck, setAtsCheck] = useState<AtsCheckResult | null>(null);
 
+  // Update from prop when it changes (for tab switching)
+  useEffect(() => {
+    if (resumeProp && !isOptimizing) {
+      setOptimizedResume(resumeProp);
+    }
+  }, [resumeProp, isOptimizing]);
+
+  // Process streaming data
   useEffect(() => {
     // Check for ATS first
     const atsChunk = streamData.find(
       (chunk) => chunk.type === 'ats' && chunk.atsCheck
     );
-    if (atsChunk?.atsCheck) {
+    if (atsChunk?.atsCheck && !atsCheck) {
       setAtsCheck(atsChunk.atsCheck);
     }
 
@@ -88,7 +98,7 @@ export function PreviewPanel({
     const suggestionChunk = streamData.find(
       (chunk) => chunk.type === 'suggestion' && chunk.suggestion
     );
-    if (suggestionChunk?.suggestion) {
+    if (suggestionChunk?.suggestion && !suggestion) {
       setSuggestion(suggestionChunk.suggestion);
     }
 
@@ -96,10 +106,10 @@ export function PreviewPanel({
     const doneChunk = streamData.find(
       (chunk) => chunk.type === 'done' && chunk.data
     );
-    if (doneChunk?.data) {
+    if (doneChunk?.data && !optimizedResume) {
       setOptimizedResume(doneChunk.data);
     }
-  }, [streamData]);
+  }, [streamData, atsCheck, suggestion, optimizedResume]);
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
@@ -173,15 +183,16 @@ export function PreviewPanel({
   if (!isOptimizing && !optimizedResume) {
     return (
       <Card
-        className="h-full min-h-[450px]"
+        className="flex flex-col h-full"
         style={{
           borderRadius: '8px',
           border: 'none',
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          maxHeight: '70vh',
         }}
       >
         <CardContent
-          className="flex h-full flex-col items-center justify-center p-10"
+          className="flex flex-1 flex-col items-center justify-center p-10"
           style={{ backgroundColor: COLORS.surface }}
         >
           <div
@@ -206,15 +217,16 @@ export function PreviewPanel({
 
   return (
     <Card
-      className="h-full min-h-[450px]"
+      className="flex flex-col h-full"
       style={{
         borderRadius: '8px',
         border: 'none',
         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        maxHeight: '70vh',
       }}
     >
       <CardHeader
-        className="border-b"
+        className="border-b flex-shrink-0"
         style={{ borderColor: COLORS.surfaceDark, backgroundColor: COLORS.surface }}
       >
         <div className="flex items-center justify-between">
@@ -253,7 +265,7 @@ export function PreviewPanel({
         )}
       </CardHeader>
       <CardContent
-        className="max-h-[600px] overflow-y-auto p-5"
+        className="flex-1 overflow-y-auto p-4"
         ref={contentRef}
         style={{ backgroundColor: COLORS.surface }}
       >
@@ -313,7 +325,9 @@ export function PreviewPanel({
                     <div className="flex items-start gap-2">
                       <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#d97706' }} />
                       <p className="text-sm" style={{ color: COLORS.secondary }}>
-                        未填写目标岗位 JD 或建议生成失败。请填写 JD 后可获得差距分析。
+                        {suggestion.gapAnalysis
+                          ? 'JD匹配度分析生成失败，请重试或稍后再试'
+                          : '未填写目标岗位JD，请填写后可获得详细的匹配度分析和改善建议'}
                       </p>
                     </div>
                   </div>
@@ -428,7 +442,7 @@ export function PreviewPanel({
         )}
 
         {optimizedResume ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Summary */}
             <div
               className="rounded-lg p-4"
@@ -764,17 +778,20 @@ export function PreviewPanel({
           <div className="space-y-4">
             {streamData
               .filter((chunk) => chunk.type === 'content')
-              .map((chunk, index) => (
+              .map((chunk, index) => {
+                const widths = [60, 75, 80, 65, 70, 85];
+                return (
                 <div key={index} className="animate-pulse">
                   <div
                     className="h-4 rounded mb-2"
                     style={{
                       backgroundColor: COLORS.surfaceDark,
-                      width: `${Math.random() * 40 + 60}%`,
+                      width: `${widths[index % widths.length]}%`,
                     }}
                   />
                 </div>
-              ))}
+              );
+              })}
             {streamData.filter((chunk) => chunk.type === 'content').length ===
               0 && (
               <div className="space-y-3">

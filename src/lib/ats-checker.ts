@@ -96,10 +96,13 @@ export function analyzeResumeATS(resumeText: string, jobDescription?: string): A
   }
 
   // 3. Structure Checks
-  // Check for contact info
-  const hasEmail = lowerText.match(/[\w.-]+@[\w.-]+\.\w+/);
-  const hasPhone = lowerText.match(/\d{3}[-.]?\d{3}[-.]?\d{4}/);
-  const hasName = lowerText.length > 20; // Rough check
+  // Check for contact info - Support Chinese labels and various formats
+  const hasEmail = /[\w.-]+@[\w.-]+\.\w+/.test(lowerText) ||
+                   /[邮箱e-mail电邮][：:\s]*[\w.-]+@[\w.-]+\.\w+/i.test(resumeText);
+  // Support Chinese mobile: 13812345678, 138-1234-5678, 0138-12345678
+  const hasPhone = /1[3-9]\d{9}/.test(resumeText) ||
+                   /1[3-9]\d[-.]?\d{4}[-.]?\d{4}/.test(resumeText) ||
+                   /0\d{2,3}[-.]?\d{7,8}/.test(resumeText);
 
   if (!hasEmail) {
     issues.push({
@@ -142,8 +145,11 @@ export function analyzeResumeATS(resumeText: string, jobDescription?: string): A
     suggestions.push('添加具体的数字成果');
   }
 
-  // Check length
-  const wordCount = resumeText.split(/\s+/).length;
+  // Check length - Support both English and Chinese
+  // Chinese characters count as ~2 words, English words count normally
+  const chineseChars = (resumeText.match(/[\u4e00-\u9fa5]/g) || []).length;
+  const englishWords = resumeText.replace(/[\u4e00-\u9fa5]/g, '').split(/\s+/).filter(Boolean).length;
+  const wordCount = chineseChars * 0.5 + englishWords;
   if (wordCount < 100) {
     issues.push({
       category: 'content',
