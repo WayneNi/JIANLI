@@ -10,13 +10,19 @@ interface JobDescriptionInputProps {
   onChange: (value: string) => void;
 }
 
+// Black & Gold Theme
 const COLORS = {
-  primary: '#1a1f2e',
-  secondary: '#2d3548',
-  accent: '#c9a227',
-  surface: '#faf9f7',
-  surfaceDark: '#f0ede8',
-  textMuted: '#6b7280',
+  darkBg: '#050508',
+  darkSurface: '#0a0a10',
+  darkElevated: '#12121a',
+  gold: '#c9a227',
+  goldLight: '#e8d48a',
+  goldDark: '#8b7019',
+  text: '#ffffff',
+  textMuted: '#888888',
+  textDim: '#555555',
+  success: '#059669',
+  border: '#1a1a24',
 };
 
 export function JobDescriptionInput({
@@ -26,23 +32,23 @@ export function JobDescriptionInput({
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
-    <Card style={{ borderRadius: '8px', border: 'none', backgroundColor: COLORS.surfaceDark }}>
+    <Card className="glass-card" style={{ borderRadius: '12px', border: `1px solid ${COLORS.border}` }}>
       <CardHeader
         className="cursor-pointer py-3"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <CardTitle className="flex items-center gap-2 text-base" style={{ color: COLORS.primary }}>
+        <CardTitle className="flex items-center gap-2 text-base" style={{ color: COLORS.text }}>
           <div
             className="w-7 h-7 rounded flex items-center justify-center"
-            style={{ backgroundColor: `${COLORS.accent}15` }}
+            style={{ backgroundColor: `${COLORS.gold}15`, border: `1px solid ${COLORS.gold}30` }}
           >
-            <FileSearch className="h-4 w-4" style={{ color: COLORS.accent }} />
+            <FileSearch className="h-4 w-4" style={{ color: COLORS.gold }} />
           </div>
           目标岗位描述（可选）
           {isExpanded ? (
-            <ChevronUp className="ml-auto h-4 w-4" style={{ color: COLORS.textMuted }} />
+            <ChevronUp className="ml-auto h-4 w-4" style={{ color: COLORS.gold }} />
           ) : (
-            <ChevronDown className="ml-auto h-4 w-4" style={{ color: COLORS.textMuted }} />
+            <ChevronDown className="ml-auto h-4 w-4" style={{ color: COLORS.gold }} />
           )}
         </CardTitle>
       </CardHeader>
@@ -55,8 +61,9 @@ export function JobDescriptionInput({
             className="min-h-[120px] resize-none"
             style={{
               borderRadius: '6px',
-              borderColor: COLORS.surface,
-              backgroundColor: COLORS.surface,
+              borderColor: COLORS.border,
+              backgroundColor: COLORS.darkSurface,
+              color: COLORS.text,
             }}
           />
           <p className="mt-2 text-xs" style={{ color: COLORS.textMuted }}>

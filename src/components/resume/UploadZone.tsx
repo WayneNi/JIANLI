@@ -10,14 +10,20 @@ interface UploadZoneProps {
   isLoading: boolean;
 }
 
+// Black & Gold Theme
 const COLORS = {
-  primary: '#1a1f2e',
-  secondary: '#2d3548',
-  accent: '#c9a227',
-  surface: '#faf9f7',
-  surfaceDark: '#f0ede8',
+  darkBg: '#050508',
+  darkSurface: '#0a0a10',
+  darkElevated: '#12121a',
+  gold: '#c9a227',
+  goldLight: '#e8d48a',
+  goldDark: '#8b7019',
+  text: '#ffffff',
+  textMuted: '#888888',
+  textDim: '#555555',
   success: '#059669',
   error: '#dc2626',
+  border: '#1a1a24',
 };
 
 export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
@@ -128,8 +134,8 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
     return (
       <Card style={{
         borderRadius: '8px',
-        border: 'none',
-        backgroundColor: `${COLORS.success}08`,
+        border: `1px solid ${COLORS.success}40`,
+        backgroundColor: `${COLORS.success}10`,
         borderLeft: `3px solid ${COLORS.success}`
       }}>
         <CardContent className="p-4">
@@ -137,13 +143,13 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
             <div className="flex items-center gap-3">
               <div
                 className="flex h-10 w-10 rounded-lg items-center justify-center"
-                style={{ backgroundColor: `${COLORS.success}15` }}
+                style={{ backgroundColor: `${COLORS.success}20` }}
               >
                 <CheckCircle2 className="h-5 w-5" style={{ color: COLORS.success }} />
               </div>
               <div>
-                <p className="font-medium text-sm" style={{ color: COLORS.primary }}>{selectedFile.name}</p>
-                <p className="text-xs" style={{ color: COLORS.secondary }}>
+                <p className="font-medium text-sm" style={{ color: COLORS.text }}>{selectedFile.name}</p>
+                <p className="text-xs" style={{ color: COLORS.textMuted }}>
                   {(selectedFile.size / 1024).toFixed(1)} KB · 已成功解析
                 </p>
               </div>
@@ -154,6 +160,7 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
                 size="icon"
                 onClick={handleClear}
                 className="h-8 w-8"
+                style={{ color: COLORS.textMuted }}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -166,12 +173,12 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
 
   return (
     <div
-      className={`relative cursor-pointer rounded-lg border-2 border-dashed p-8 transition-all duration-300 ${
+      className={`relative cursor-pointer rounded-lg border-2 border-dashed p-8 transition-all duration-300 hover-lift ${
         isDragging ? 'scale-[1.02]' : ''
       }`}
       style={{
-        borderColor: isDragging ? COLORS.accent : COLORS.surfaceDark,
-        backgroundColor: isDragging ? `${COLORS.accent}08` : COLORS.surface,
+        borderColor: isDragging ? COLORS.gold : COLORS.border,
+        backgroundColor: isDragging ? `${COLORS.gold}10` : COLORS.darkSurface,
       }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -188,18 +195,18 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
       <div className="flex flex-col items-center text-center">
         <div
           className="mb-4 flex h-14 w-14 items-center justify-center rounded-full transition-transform"
-          style={{ backgroundColor: COLORS.surfaceDark }}
+          style={{ backgroundColor: `${COLORS.gold}15`, border: `1px solid ${COLORS.gold}30` }}
         >
           {isProcessing ? (
-            <Loader2 className="h-6 w-6 animate-spin" style={{ color: COLORS.accent }} />
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: COLORS.gold }} />
           ) : (
-            <Upload className="h-6 w-6" style={{ color: COLORS.secondary }} />
+            <Upload className="h-6 w-6" style={{ color: COLORS.gold }} />
           )}
         </div>
-        <p className="mb-1 font-medium" style={{ color: COLORS.primary }}>
+        <p className="mb-1 font-medium" style={{ color: COLORS.text }}>
           {isProcessing ? '正在解析文件...' : '拖拽文件到此处，或点击选择'}
         </p>
-        <p className="text-sm" style={{ color: COLORS.secondary }}>
+        <p className="text-sm" style={{ color: COLORS.textMuted }}>
           支持 PDF 和 Word (.docx) 文件，最大 5MB
         </p>
         {error && (
