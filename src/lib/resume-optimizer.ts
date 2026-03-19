@@ -201,19 +201,6 @@ const WEAK_VERBS = [
   '从事',
 ];
 
-const STRONG_VERBS = [
-  '主导',
-  '构建',
-  '优化',
-  '提升',
-  '设计',
-  '开发',
-  '管理',
-  '协调',
-  '制定',
-  '执行',
-];
-
 /**
  * Check if text contains weak verbs
  */

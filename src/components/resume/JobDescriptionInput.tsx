@@ -10,19 +10,22 @@ interface JobDescriptionInputProps {
   onChange: (value: string) => void;
 }
 
-// Black & Gold Theme
+// Purple-Blue Gradient Theme
 const COLORS = {
-  darkBg: '#050508',
-  darkSurface: '#0a0a10',
-  darkElevated: '#12121a',
-  gold: '#c9a227',
-  goldLight: '#e8d48a',
-  goldDark: '#8b7019',
-  text: '#ffffff',
-  textMuted: '#888888',
-  textDim: '#555555',
+  bg: '#FAFAFA',
+  surface: '#FFFFFF',
+  surfaceElevated: '#F8F9FA',
+  primary: '#7C3AED',
+  primaryLight: '#A78BFA',
+  gradientStart: '#667EEA',
+  gradientEnd: '#764BA2',
+  accent: '#EC4899',
+  text: '#111827',
+  textMuted: '#6B7280',
+  textLight: '#9CA3AF',
+  border: '#E5E7EB',
   success: '#059669',
-  border: '#1a1a24',
+  error: '#DC2626',
 };
 
 export function JobDescriptionInput({
@@ -40,15 +43,15 @@ export function JobDescriptionInput({
         <CardTitle className="flex items-center gap-2 text-base" style={{ color: COLORS.text }}>
           <div
             className="w-7 h-7 rounded flex items-center justify-center"
-            style={{ backgroundColor: `${COLORS.gold}15`, border: `1px solid ${COLORS.gold}30` }}
+            style={{ backgroundColor: `${COLORS.primary}15`, border: `1px solid ${COLORS.primary}30` }}
           >
-            <FileSearch className="h-4 w-4" style={{ color: COLORS.gold }} />
+            <FileSearch className="h-4 w-4" style={{ color: COLORS.primary }} />
           </div>
           目标岗位描述（可选）
           {isExpanded ? (
-            <ChevronUp className="ml-auto h-4 w-4" style={{ color: COLORS.gold }} />
+            <ChevronUp className="ml-auto h-4 w-4" style={{ color: COLORS.primary }} />
           ) : (
-            <ChevronDown className="ml-auto h-4 w-4" style={{ color: COLORS.gold }} />
+            <ChevronDown className="ml-auto h-4 w-4" style={{ color: COLORS.primary }} />
           )}
         </CardTitle>
       </CardHeader>
@@ -62,8 +65,9 @@ export function JobDescriptionInput({
             style={{
               borderRadius: '6px',
               borderColor: COLORS.border,
-              backgroundColor: COLORS.darkSurface,
+              backgroundColor: COLORS.surface,
               color: COLORS.text,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
             }}
           />
           <p className="mt-2 text-xs" style={{ color: COLORS.textMuted }}>

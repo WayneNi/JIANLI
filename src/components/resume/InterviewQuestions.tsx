@@ -20,13 +20,20 @@ interface InterviewQuestion {
 }
 
 const COLORS = {
-  primary: '#1a1f2e',
-  secondary: '#2d3548',
-  accent: '#c9a227',
+  bg: '#FAFAFA',
+  surface: '#FFFFFF',
+  surfaceElevated: '#F8F9FA',
+  primary: '#7C3AED',
+  primaryLight: '#A78BFA',
+  gradientStart: '#667EEA',
+  gradientEnd: '#764BA2',
+  accent: '#EC4899',
+  text: '#111827',
+  textMuted: '#6B7280',
+  textLight: '#9CA3AF',
+  border: '#E5E7EB',
   success: '#059669',
-  surface: '#faf9f7',
-  surfaceDark: '#f0ede8',
-  textMuted: '#6b7280',
+  error: '#DC2626',
 };
 
 export function InterviewQuestionsGenerator({ resumeText, jobDescription }: InterviewQuestionsProps) {
@@ -167,7 +174,7 @@ export function InterviewQuestionsGenerator({ resumeText, jobDescription }: Inte
               <div
                 key={expIndex}
                 className="rounded-lg border"
-                style={{ borderColor: COLORS.surfaceDark }}
+                style={{ borderColor: COLORS.border }}
               >
                 <button
                   onClick={() => toggleExp(expIndex)}

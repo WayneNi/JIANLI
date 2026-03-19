@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Sparkles,
   FileText,
-  ArrowRight,
   MoveHorizontal,
   X,
 } from 'lucide-react';
@@ -20,14 +18,20 @@ interface CompareViewProps {
 }
 
 const COLORS = {
-  primary: '#1a1f2e',
-  secondary: '#2d3548',
-  accent: '#c9a227',
-  accentLight: '#e8d48a',
-  surface: '#faf9f7',
-  surfaceDark: '#f0ede8',
-  textMuted: '#6b7280',
+  bg: '#FAFAFA',
+  surface: '#FFFFFF',
+  surfaceElevated: '#F8F9FA',
+  primary: '#7C3AED',
+  primaryLight: '#A78BFA',
+  gradientStart: '#667EEA',
+  gradientEnd: '#764BA2',
+  accent: '#EC4899',
+  text: '#111827',
+  textMuted: '#6B7280',
+  textLight: '#9CA3AF',
+  border: '#E5E7EB',
   success: '#059669',
+  error: '#DC2626',
 };
 
 export function CompareView({
@@ -35,8 +39,6 @@ export function CompareView({
   optimizedResume,
   onClose,
 }: CompareViewProps) {
-  const [sliderPosition, setSliderPosition] = useState(50);
-
   // Parse original text into sections (basic parsing)
   const parseOriginalResume = (text: string) => {
     const lines = text.split('\n').filter((l) => l.trim());
@@ -136,7 +138,7 @@ export function CompareView({
                 <p className="text-xs font-medium uppercase mb-2" style={{ color: '#dc2626' }}>
                   个人简介
                 </p>
-                <div className="text-sm space-y-2" style={{ color: COLORS.secondary }}>
+                <div className="text-sm space-y-2" style={{ color: COLORS.textMuted }}>
                   {original.summary.length > 0 ? (
                     original.summary.map((line, i) => (
                       <p key={i}>{line}</p>
@@ -154,7 +156,7 @@ export function CompareView({
                 <p className="text-xs font-medium uppercase mb-2" style={{ color: '#dc2626' }}>
                   工作经历
                 </p>
-                <div className="text-sm space-y-2" style={{ color: COLORS.secondary }}>
+                <div className="text-sm space-y-2" style={{ color: COLORS.textMuted }}>
                   {original.experience.length > 0 ? (
                     original.experience.map((line, i) => (
                       <p key={i}>{line}</p>
@@ -267,7 +269,7 @@ export function CompareView({
             <h4 className="font-semibold mb-3" style={{ color: COLORS.primary }}>
               优化亮点
             </h4>
-            <ul className="space-y-2 text-sm" style={{ color: COLORS.secondary }}>
+            <ul className="space-y-2 text-sm" style={{ color: COLORS.textMuted }}>
               <li className="flex items-start gap-2">
                 <Sparkles className="h-4 w-4 mt-0.5" style={{ color: COLORS.accent }} />
                 <span>应用 STAR 法则重构工作经历，描述更具说服力</span>

@@ -6,29 +6,12 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
 } from '@react-pdf/renderer';
 import type { OptimizedResume } from '@/types/resume';
 import type { TemplateType } from '@/lib/templates';
 
-// Register fonts for Chinese support
-Font.register({
-  family: 'Noto Sans SC',
-  fonts: [
-    {
-      src: 'https://fonts.gstatic.com/s/notosanssc/v36/k3kCo84MPvpLmixcA63oeALhLOCT-xWdqOhi.woff2',
-      fontWeight: 400,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/notosanssc/v36/k3kCo84MPvpLmixcA63oeALhLOCT-xWdqOhi.woff2',
-      fontWeight: 500,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/notosanssc/v36/k3kCo84MPvpLmixcA63oeALhLOCT-xWdqOhi.woff2',
-      fontWeight: 700,
-    },
-  ],
-});
+// Use built-in Helvetica font for PDF
+// Note: For production, consider using a bundled Chinese font
 
 // Simple styles - using standard fonts that work better
 const simpleStyles = StyleSheet.create({

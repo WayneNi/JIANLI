@@ -10,20 +10,22 @@ interface UploadZoneProps {
   isLoading: boolean;
 }
 
-// Black & Gold Theme
+// Purple-Blue Gradient Theme
 const COLORS = {
-  darkBg: '#050508',
-  darkSurface: '#0a0a10',
-  darkElevated: '#12121a',
-  gold: '#c9a227',
-  goldLight: '#e8d48a',
-  goldDark: '#8b7019',
-  text: '#ffffff',
-  textMuted: '#888888',
-  textDim: '#555555',
+  bg: '#FAFAFA',
+  surface: '#FFFFFF',
+  surfaceElevated: '#F8F9FA',
+  primary: '#7C3AED',
+  primaryLight: '#A78BFA',
+  gradientStart: '#667EEA',
+  gradientEnd: '#764BA2',
+  accent: '#EC4899',
+  text: '#111827',
+  textMuted: '#6B7280',
+  textLight: '#9CA3AF',
+  border: '#E5E7EB',
   success: '#059669',
-  error: '#dc2626',
-  border: '#1a1a24',
+  error: '#DC2626',
 };
 
 export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
@@ -177,8 +179,8 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
         isDragging ? 'scale-[1.02]' : ''
       }`}
       style={{
-        borderColor: isDragging ? COLORS.gold : COLORS.border,
-        backgroundColor: isDragging ? `${COLORS.gold}10` : COLORS.darkSurface,
+        borderColor: isDragging ? COLORS.primary : COLORS.border,
+        backgroundColor: isDragging ? `${COLORS.primary}10` : COLORS.surface,
       }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -195,12 +197,12 @@ export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
       <div className="flex flex-col items-center text-center">
         <div
           className="mb-4 flex h-14 w-14 items-center justify-center rounded-full transition-transform"
-          style={{ backgroundColor: `${COLORS.gold}15`, border: `1px solid ${COLORS.gold}30` }}
+          style={{ backgroundColor: `${COLORS.primary}15`, border: `1px solid ${COLORS.primary}30` }}
         >
           {isProcessing ? (
-            <Loader2 className="h-6 w-6 animate-spin" style={{ color: COLORS.gold }} />
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: COLORS.primary }} />
           ) : (
-            <Upload className="h-6 w-6" style={{ color: COLORS.gold }} />
+            <Upload className="h-6 w-6" style={{ color: COLORS.primary }} />
           )}
         </div>
         <p className="mb-1 font-medium" style={{ color: COLORS.text }}>

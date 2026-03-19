@@ -39,7 +39,14 @@ export interface ResumeSkills {
   languages?: string[];
 }
 
+export interface ResumeContact {
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
 export interface OptimizedResume {
+  contact?: ResumeContact;
   summary: string;
   experience: ResumeExperience[];
   skills: ResumeSkills;
@@ -90,6 +97,7 @@ export interface StreamChunk {
   data?: OptimizedResume;
   suggestion?: ResumeSuggestion;
   atsCheck?: AtsCheckResult;
+  fromCache?: boolean;
   coverLetter?: {
     subject: string;
     content: string;

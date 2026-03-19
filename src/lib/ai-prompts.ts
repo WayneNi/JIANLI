@@ -16,6 +16,11 @@ export const SYSTEM_PROMPT = `你是一位专业的简历优化专家，擅长�
 
 \`\`\`json
 {
+  "contact": {
+    "name": "姓名",
+    "email": "邮箱地址",
+    "phone": "电话号码"
+  },
   "summary": "个人简介（2-3句话，突出核心竞争力）",
   "experience": [
     {
@@ -41,6 +46,8 @@ export const SYSTEM_PROMPT = `你是一位专业的简历优化专家，擅长�
   ]
 }
 \`\`\`
+
+**重要：必须保留原文中的联系信息（姓名、邮箱、电话），不要遗漏。**
 
 ## 重要规则
 - STAR 法则示例：
@@ -70,45 +77,16 @@ export const STATUS_MESSAGES: Record<string, string> = {
   completed: '优化完成！',
 };
 
-// Prompt for generating JD-based improvement suggestions
+// Prompt for generating JD-based improvement suggestions (compressed)
 export const SUGGESTION_PROMPT = (resumeText: string, jobDescription: string) => `
-## 简历内容
+## 简历
 ${resumeText}
 
-## 目标岗位 JD
+## JD
 ${jobDescription}
 
-你是一位专业的简历优化顾问。你的任务是分析当前简历与目标岗位 JD 之间的差距，并给出具体的改善建议。
-
-请分析并返回以下内容的 JSON 格式：
-
-\`\`\`json
-{
-  "matchScore": 75,
-  "gapAnalysis": "当前简历与 JD 的主要差距分析",
-  "skillGaps": ["缺少的技能1", "缺少的技能2"],
-  "experienceSuggestions": [
-    {
-      "type": "add|emphasize|remove",
-      "suggestion": "具体建议内容"
-    }
-  ],
-  "actionPlan": [
-    "第一步具体建议",
-    "第二步具体建议",
-    "第三步具体建议"
-  ]
-}
-\`\`\`
-
-## 分析要求
-1. **匹配度评分 (matchScore)**: 根据简历与 JD 的关键词匹配度、工作经验相关性、技能匹配度给出 0-100 的评分
-2. **差距分析 (gapAnalysis)**: 简洁描述当前简历与理想候选人之间的主要差距
-3. **技能缺口 (skillGaps)**: 列出 JD 中要求但简历中缺少的硬技能
-4. **经历建议 (experienceSuggestions)**: 针对每段经历给出增强/弱化/新增建议
-5. **执行方向 (actionPlan)**: 给出 3-5 个具体的下一步行动建议
-
-**重要：必须返回纯 JSON 格式，不要包含任何解释性文本或markdown代码块。**`;
+分析简历与JD的匹配度，返回JSON：
+{"matchScore":75,"gapAnalysis":"...","skillGaps":[],"experienceSuggestions":[],"actionPlan":[]}`;
 
 export const OPTIMIZE_PROMPT = (resumeText: string, jobDescription?: string) => `
 ## 简历内容

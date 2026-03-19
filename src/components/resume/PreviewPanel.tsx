@@ -40,20 +40,22 @@ interface PreviewPanelProps {
   resume?: OptimizedResume | null;
 }
 
-// Design tokens - Black & Gold Luxury Theme
+// Design tokens - Purple-Blue Gradient Theme
 const COLORS = {
-  darkBg: '#050508',
-  darkSurface: '#0a0a10',
-  darkElevated: '#12121a',
-  gold: '#c9a227',
-  goldLight: '#e8d48a',
-  goldBright: '#ffd700',
-  goldDark: '#8b7019',
-  text: '#ffffff',
-  textMuted: '#888888',
-  textDim: '#555555',
+  bg: '#FAFAFA',
+  surface: '#FFFFFF',
+  surfaceElevated: '#F8F9FA',
+  primary: '#7C3AED',
+  primaryLight: '#A78BFA',
+  gradientStart: '#667EEA',
+  gradientEnd: '#764BA2',
+  accent: '#EC4899',
+  text: '#111827',
+  textMuted: '#6B7280',
+  textLight: '#9CA3AF',
+  border: '#E5E7EB',
   success: '#059669',
-  border: '#1a1a24',
+  error: '#DC2626',
 };
 
 export function PreviewPanel({
@@ -192,21 +194,21 @@ export function PreviewPanel({
         style={{
           borderRadius: '12px',
           maxHeight: '70vh',
-          backgroundColor: COLORS.darkSurface,
+          backgroundColor: COLORS.surface,
           border: `1px solid ${COLORS.border}`,
         }}
       >
         <CardContent
           className="flex flex-1 flex-col items-center justify-center p-10"
-          style={{ backgroundColor: COLORS.darkSurface }}
+          style={{ backgroundColor: COLORS.surface }}
         >
           <div
             className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
-            style={{ backgroundColor: `${COLORS.gold}15` }}
+            style={{ backgroundColor: `${COLORS.primary}15` }}
           >
             <FileText
               className="h-10 w-10"
-              style={{ color: COLORS.gold }}
+              style={{ color: COLORS.primary }}
             />
           </div>
           <p className="text-lg font-medium mb-2 text-white">
@@ -226,13 +228,13 @@ export function PreviewPanel({
       style={{
         borderRadius: '12px',
         maxHeight: '70vh',
-        backgroundColor: COLORS.darkSurface,
+        backgroundColor: COLORS.surface,
         border: `1px solid ${COLORS.border}`,
       }}
     >
       <CardHeader
         className="border-b flex-shrink-0"
-        style={{ borderColor: COLORS.border, backgroundColor: COLORS.darkElevated }}
+        style={{ borderColor: COLORS.border, backgroundColor: COLORS.surfaceElevated }}
       >
         <div className="flex items-center justify-between">
           <CardTitle
@@ -241,19 +243,19 @@ export function PreviewPanel({
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${COLORS.gold}15`, border: `1px solid ${COLORS.gold}30` }}
+              style={{ backgroundColor: `${COLORS.primary}15`, border: `1px solid ${COLORS.primary}30` }}
             >
-              <Sparkles className="h-4 w-4" style={{ color: COLORS.gold }} />
+              <Sparkles className="h-4 w-4" style={{ color: COLORS.primary }} />
             </div>
             优化预览
           </CardTitle>
           {isOptimizing && (
             <Badge
               style={{
-                backgroundColor: `${COLORS.gold}15`,
-                color: COLORS.gold,
+                backgroundColor: `${COLORS.primary}15`,
+                color: COLORS.primary,
                 borderRadius: '4px',
-                border: `1px solid ${COLORS.gold}30`,
+                border: `1px solid ${COLORS.primary}30`,
               }}
             >
               {STATUS_MESSAGES[status] || '处理中...'}
@@ -265,7 +267,7 @@ export function PreviewPanel({
             value={getStatusProgress()}
             className="mt-3 h-1.5"
             style={{
-              backgroundColor: COLORS.darkSurface,
+              backgroundColor: COLORS.surface,
             }}
           />
         )}
@@ -273,7 +275,7 @@ export function PreviewPanel({
       <CardContent
         className="flex-1 overflow-y-auto p-4"
         ref={contentRef}
-        style={{ backgroundColor: COLORS.darkSurface }}
+        style={{ backgroundColor: COLORS.surface }}
       >
         {/* Suggestion Section */}
         {suggestion && (
@@ -282,19 +284,19 @@ export function PreviewPanel({
               onClick={() => toggleSection('suggestion')}
               className="mb-3 flex w-full items-center justify-between rounded-lg p-3 transition-colors"
               style={{
-                backgroundColor: `${COLORS.gold}15`,
+                backgroundColor: `${COLORS.primary}15`,
                 color: COLORS.text,
-                border: `1px solid ${COLORS.gold}30`,
+                border: `1px solid ${COLORS.primary}30`,
               }}
             >
               <div className="flex items-center gap-2 font-medium">
-                <Target className="h-4 w-4" style={{ color: COLORS.gold }} />
+                <Target className="h-4 w-4" style={{ color: COLORS.primary }} />
                 简历改善建议
               </div>
               {expandedSections.suggestion ? (
-                <ChevronUp className="h-4 w-4" style={{ color: COLORS.gold }} />
+                <ChevronUp className="h-4 w-4" style={{ color: COLORS.primary }} />
               ) : (
-                <ChevronDown className="h-4 w-4" style={{ color: COLORS.gold }} />
+                <ChevronDown className="h-4 w-4" style={{ color: COLORS.primary }} />
               )}
             </button>
 
@@ -302,7 +304,7 @@ export function PreviewPanel({
               <div className="space-y-3 pl-2">
                 {/* Match Score */}
                 {suggestion.matchScore > 0 ? (
-                  <div className="flex items-center gap-4 p-4 rounded-lg glass-card" style={{ backgroundColor: COLORS.darkElevated }}>
+                  <div className="flex items-center gap-4 p-4 rounded-lg glass-card" style={{ backgroundColor: COLORS.surfaceElevated }}>
                     <div className="flex-1">
                       <p className="text-sm font-medium" style={{ color: COLORS.textMuted }}>
                         JD 匹配度
@@ -323,14 +325,14 @@ export function PreviewPanel({
                       value={suggestion.matchScore}
                       className="h-2 w-24"
                       style={{
-                        backgroundColor: COLORS.darkSurface,
+                        backgroundColor: COLORS.surface,
                       }}
                     />
                   </div>
                 ) : (
-                  <div className="rounded-lg p-4" style={{ backgroundColor: `${COLORS.gold}10`, border: `1px solid ${COLORS.gold}30` }}>
+                  <div className="rounded-lg p-4" style={{ backgroundColor: `${COLORS.primary}10`, border: `1px solid ${COLORS.primary}30` }}>
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.gold }} />
+                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.primary }} />
                       <p className="text-sm" style={{ color: COLORS.text }}>
                         {suggestion.gapAnalysis
                           ? 'JD匹配度分析生成失败，请重试或稍后再试'
@@ -342,11 +344,11 @@ export function PreviewPanel({
 
                 {/* Gap Analysis */}
                 {suggestion.gapAnalysis && (
-                  <div className="rounded-lg p-4" style={{ backgroundColor: `${COLORS.gold}10`, border: `1px solid ${COLORS.gold}30` }}>
+                  <div className="rounded-lg p-4" style={{ backgroundColor: `${COLORS.primary}10`, border: `1px solid ${COLORS.primary}30` }}>
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.gold }} />
+                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.primary }} />
                       <div>
-                        <p className="text-xs font-medium uppercase mb-1" style={{ color: COLORS.gold }}>
+                        <p className="text-xs font-medium uppercase mb-1" style={{ color: COLORS.primary }}>
                           差距分析
                         </p>
                         <p className="text-sm" style={{ color: COLORS.textMuted }}>
@@ -359,22 +361,24 @@ export function PreviewPanel({
 
                 {/* Skill Gaps */}
                 {suggestion.skillGaps && suggestion.skillGaps.length > 0 && (
-                  <div className="rounded-lg p-4" style={{ backgroundColor: `${COLORS.gold}10`, border: `1px solid ${COLORS.gold}30` }}>
+                  <div className="rounded-lg p-4" style={{ backgroundColor: `${COLORS.primary}10`, border: `1px solid ${COLORS.primary}30` }}>
                     <div className="flex items-start gap-2">
-                      <Wrench className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.gold }} />
+                      <Wrench className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.primary }} />
                       <div>
-                        <p className="text-xs font-medium uppercase mb-2" style={{ color: COLORS.gold }}>
+                        <p className="text-xs font-medium uppercase mb-2" style={{ color: COLORS.primary }}>
                           技能缺口
                         </p>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 min-w-0">
                           {suggestion.skillGaps.map((skill, i) => (
                             <Badge
                               key={i}
                               style={{
-                                backgroundColor: `${COLORS.gold}15`,
-                                color: COLORS.gold,
+                                backgroundColor: `${COLORS.primary}15`,
+                                color: COLORS.primary,
                                 borderRadius: '4px',
-                                border: `1px solid ${COLORS.gold}30`,
+                                border: `1px solid ${COLORS.primary}30`,
+                                maxWidth: '100%',
+                                wordBreak: 'break-word',
                               }}
                             >
                               {skill}
@@ -388,11 +392,11 @@ export function PreviewPanel({
 
                 {/* Experience Suggestions */}
                 {suggestion.experienceSuggestions && suggestion.experienceSuggestions.length > 0 && (
-                  <div className="rounded-lg p-4" style={{ backgroundColor: `${COLORS.gold}10`, border: `1px solid ${COLORS.gold}30` }}>
+                  <div className="rounded-lg p-4" style={{ backgroundColor: `${COLORS.primary}10`, border: `1px solid ${COLORS.primary}30` }}>
                     <div className="flex items-start gap-2">
-                      <Briefcase className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.gold }} />
+                      <Briefcase className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.primary }} />
                       <div>
-                        <p className="text-xs font-medium uppercase mb-2" style={{ color: COLORS.gold }}>
+                        <p className="text-xs font-medium uppercase mb-2" style={{ color: COLORS.primary }}>
                           经历建议
                         </p>
                         <div className="space-y-2">
@@ -400,11 +404,11 @@ export function PreviewPanel({
                             <div key={i} className="flex items-start gap-2">
                               <Badge
                                 style={{
-                                  backgroundColor: exp.type === 'add' ? `${COLORS.success}20` : exp.type === 'emphasize' ? `${COLORS.gold}20` : '#dc262620',
-                                  color: exp.type === 'add' ? COLORS.success : exp.type === 'emphasize' ? COLORS.gold : '#dc2626',
+                                  backgroundColor: exp.type === 'add' ? `${COLORS.success}20` : exp.type === 'emphasize' ? `${COLORS.primary}20` : '#dc262620',
+                                  color: exp.type === 'add' ? COLORS.success : exp.type === 'emphasize' ? COLORS.primary : '#dc2626',
                                   borderRadius: '4px',
                                   fontSize: '10px',
-                                  border: `1px solid ${exp.type === 'add' ? COLORS.success : exp.type === 'emphasize' ? COLORS.gold : '#dc2626'}40`,
+                                  border: `1px solid ${exp.type === 'add' ? COLORS.success : exp.type === 'emphasize' ? COLORS.primary : '#dc2626'}40`,
                                 }}
                               >
                                 {exp.type === 'add' ? '新增' : exp.type === 'emphasize' ? '强化' : '弱化'}
@@ -455,14 +459,14 @@ export function PreviewPanel({
             {/* Summary */}
             <div
               className="rounded-lg p-4 glass-card"
-              style={{ backgroundColor: COLORS.darkElevated, border: `1px solid ${COLORS.border}` }}
+              style={{ backgroundColor: COLORS.surfaceElevated, border: `1px solid ${COLORS.border}` }}
             >
               <div className="flex items-center justify-between mb-2">
                 <h3
                   className="font-semibold flex items-center gap-2"
                   style={{ color: COLORS.text }}
                 >
-                  <Sparkles className="h-4 w-4" style={{ color: COLORS.gold }} />
+                  <Sparkles className="h-4 w-4" style={{ color: COLORS.primary }} />
                   个人简介
                 </h3>
                 <Button
@@ -472,7 +476,7 @@ export function PreviewPanel({
                     startEdit('summary', 0, optimizedResume.summary)
                   }
                   className="h-6 px-2"
-                  style={{ color: COLORS.gold }}
+                  style={{ color: COLORS.primary }}
                 >
                   <Edit2 className="h-3 w-3" />
                 </Button>
@@ -484,10 +488,10 @@ export function PreviewPanel({
                     onChange={(e) => setEditValue(e.target.value)}
                     className="min-h-[100px]"
                     placeholder="编辑个人简介..."
-                    style={{ backgroundColor: COLORS.darkSurface, color: COLORS.text, borderColor: COLORS.border }}
+                    style={{ backgroundColor: COLORS.surface, color: COLORS.text, borderColor: COLORS.border }}
                   />
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={saveEdit} className="gap-1" style={{ backgroundColor: COLORS.gold, color: COLORS.darkBg }}>
+                    <Button size="sm" onClick={saveEdit} className="gap-1" style={{ backgroundColor: COLORS.primary, color: COLORS.bg }}>
                       <Save className="h-3 w-3" /> 保存
                     </Button>
                     <Button
@@ -517,19 +521,19 @@ export function PreviewPanel({
                 onClick={() => toggleSection('experience')}
                 className="mb-3 flex w-full items-center justify-between rounded-lg p-3 transition-colors"
                 style={{
-                  backgroundColor: `${COLORS.gold}15`,
+                  backgroundColor: `${COLORS.primary}15`,
                   color: COLORS.text,
-                  border: `1px solid ${COLORS.gold}30`,
+                  border: `1px solid ${COLORS.primary}30`,
                 }}
               >
                 <div className="flex items-center gap-2 font-medium">
-                  <Briefcase className="h-4 w-4" style={{ color: COLORS.gold }} />
+                  <Briefcase className="h-4 w-4" style={{ color: COLORS.primary }} />
                   工作经历 ({optimizedResume.experience.length})
                 </div>
                 {expandedSections.experience ? (
-                  <ChevronUp className="h-4 w-4" style={{ color: COLORS.gold }} />
+                  <ChevronUp className="h-4 w-4" style={{ color: COLORS.primary }} />
                 ) : (
-                  <ChevronDown className="h-4 w-4" style={{ color: COLORS.gold }} />
+                  <ChevronDown className="h-4 w-4" style={{ color: COLORS.primary }} />
                 )}
               </button>
               {expandedSections.experience && (
@@ -540,7 +544,7 @@ export function PreviewPanel({
                       className="rounded-lg border p-4 glass-card"
                       style={{
                         borderColor: COLORS.border,
-                        backgroundColor: COLORS.darkElevated,
+                        backgroundColor: COLORS.surfaceElevated,
                       }}
                     >
                       <div className="flex items-start justify-between mb-3">
@@ -559,7 +563,7 @@ export function PreviewPanel({
                             startEdit('experience', index, exp.starFormatted || exp.description)
                           }
                           className="h-6 px-2"
-                          style={{ color: COLORS.gold }}
+                          style={{ color: COLORS.primary }}
                         >
                           <Edit2 className="h-3 w-3" />
                         </Button>
@@ -573,10 +577,10 @@ export function PreviewPanel({
                             onChange={(e) => setEditValue(e.target.value)}
                             className="min-h-[120px]"
                             placeholder="编辑经历描述 (STAR格式)..."
-                            style={{ backgroundColor: COLORS.darkSurface, color: COLORS.text, borderColor: COLORS.border }}
+                            style={{ backgroundColor: COLORS.surface, color: COLORS.text, borderColor: COLORS.border }}
                           />
                           <div className="flex gap-2">
-                            <Button size="sm" onClick={saveEdit} className="gap-1" style={{ backgroundColor: COLORS.gold, color: COLORS.darkBg }}>
+                            <Button size="sm" onClick={saveEdit} className="gap-1" style={{ backgroundColor: COLORS.primary, color: COLORS.bg }}>
                               <Save className="h-3 w-3" /> 保存
                             </Button>
                             <Button
@@ -593,7 +597,7 @@ export function PreviewPanel({
                       ) : (
                         <>
                           {exp.description && (
-                            <div className="mb-3 rounded p-3" style={{ backgroundColor: COLORS.darkSurface }}>
+                            <div className="mb-3 rounded p-3" style={{ backgroundColor: COLORS.surface }}>
                               <p
                                 className="text-xs font-medium uppercase mb-1"
                                 style={{ color: COLORS.textMuted }}
@@ -667,7 +671,7 @@ export function PreviewPanel({
                         startEdit('skills', 0, optimizedResume.skills.technical.join(', '))
                       }
                       className="h-6 px-2"
-                      style={{ color: COLORS.gold }}
+                      style={{ color: COLORS.primary }}
                     >
                       <Edit2 className="h-3 w-3" />
                     </Button>
@@ -681,13 +685,13 @@ export function PreviewPanel({
                         onChange={(e) => setEditValue(e.target.value)}
                         className="min-h-[80px]"
                         placeholder="输入技能，用逗号分隔..."
-                        style={{ backgroundColor: COLORS.darkSurface, color: COLORS.text, borderColor: COLORS.border }}
+                        style={{ backgroundColor: COLORS.surface, color: COLORS.text, borderColor: COLORS.border }}
                       />
                       <p className="text-xs" style={{ color: COLORS.textMuted }}>
                         用逗号分隔多个技能
                       </p>
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={saveEdit} className="gap-1" style={{ backgroundColor: COLORS.gold, color: COLORS.darkBg }}>
+                        <Button size="sm" onClick={saveEdit} className="gap-1" style={{ backgroundColor: COLORS.primary, color: COLORS.bg }}>
                           <Save className="h-3 w-3" /> 保存
                         </Button>
                         <Button
@@ -709,10 +713,10 @@ export function PreviewPanel({
                             <Badge
                               key={i}
                               style={{
-                                backgroundColor: `${COLORS.gold}15`,
-                                color: COLORS.gold,
+                                backgroundColor: `${COLORS.primary}15`,
+                                color: COLORS.primary,
                                 borderRadius: '4px',
-                                border: `1px solid ${COLORS.gold}30`,
+                                border: `1px solid ${COLORS.primary}30`,
                               }}
                             >
                               {skill}
@@ -758,19 +762,19 @@ export function PreviewPanel({
                 onClick={() => toggleSection('education')}
                 className="mb-3 flex w-full items-center justify-between rounded-lg p-3 transition-colors"
                 style={{
-                  backgroundColor: `${COLORS.gold}15`,
+                  backgroundColor: `${COLORS.primary}15`,
                   color: COLORS.text,
-                  border: `1px solid ${COLORS.gold}30`,
+                  border: `1px solid ${COLORS.primary}30`,
                 }}
               >
                 <div className="flex items-center gap-2 font-medium">
-                  <GraduationCap className="h-4 w-4" style={{ color: COLORS.gold }} />
+                  <GraduationCap className="h-4 w-4" style={{ color: COLORS.primary }} />
                   教育背景 ({optimizedResume.education.length})
                 </div>
                 {expandedSections.education ? (
-                  <ChevronUp className="h-4 w-4" style={{ color: COLORS.gold }} />
+                  <ChevronUp className="h-4 w-4" style={{ color: COLORS.primary }} />
                 ) : (
-                  <ChevronDown className="h-4 w-4" style={{ color: COLORS.gold }} />
+                  <ChevronDown className="h-4 w-4" style={{ color: COLORS.primary }} />
                 )}
               </button>
               {expandedSections.education && (
@@ -781,7 +785,7 @@ export function PreviewPanel({
                       className="rounded-lg border p-3 glass-card"
                       style={{
                         borderColor: COLORS.border,
-                        backgroundColor: COLORS.darkElevated,
+                        backgroundColor: COLORS.surfaceElevated,
                       }}
                     >
                       <p className="font-semibold" style={{ color: COLORS.text }}>
@@ -808,7 +812,7 @@ export function PreviewPanel({
                   <div
                     className="h-4 rounded mb-2"
                     style={{
-                      backgroundColor: COLORS.darkElevated,
+                      backgroundColor: COLORS.surfaceElevated,
                       width: `${widths[index % widths.length]}%`,
                     }}
                   />
@@ -818,10 +822,10 @@ export function PreviewPanel({
             {streamData.filter((chunk) => chunk.type === 'content').length ===
               0 && (
               <div className="space-y-3">
-                <div className="h-4 rounded" style={{ backgroundColor: COLORS.darkElevated, width: '80%' }} />
-                <div className="h-4 rounded" style={{ backgroundColor: COLORS.darkElevated, width: '60%' }} />
-                <div className="h-4 rounded" style={{ backgroundColor: COLORS.darkElevated, width: '70%' }} />
-                <div className="h-4 rounded" style={{ backgroundColor: COLORS.darkElevated, width: '50%' }} />
+                <div className="h-4 rounded" style={{ backgroundColor: COLORS.surfaceElevated, width: '80%' }} />
+                <div className="h-4 rounded" style={{ backgroundColor: COLORS.surfaceElevated, width: '60%' }} />
+                <div className="h-4 rounded" style={{ backgroundColor: COLORS.surfaceElevated, width: '70%' }} />
+                <div className="h-4 rounded" style={{ backgroundColor: COLORS.surfaceElevated, width: '50%' }} />
               </div>
             )}
           </div>

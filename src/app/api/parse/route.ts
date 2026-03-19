@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { extractRawText } from 'mammoth';
 import * as fs from 'fs';
-import * as path from 'path';
+import { randomUUID } from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,42 +45,80 @@ export async function POST(req: NextRequest) {
 
     if (isPdf || file.type === 'application/pdf') {
       try {
-        // Parse PDF using pdfjs-dist v3 (better Node.js support)
-        console.log('Starting PDF parsing...');
+        // Parse PDF using child process
+        console.log('Starting PDF parsing via child process...');
+
+        // Save file temporarily
         const arrayBuffer = await file.arrayBuffer();
-        console.log('ArrayBuffer length:', arrayBuffer.byteLength);
+        const buffer = Buffer.from(arrayBuffer);
+        const tempFileName = `${randomUUID()}.pdf`;
+        const tempFilePath = process.cwd() + '/temp/' + tempFileName;
 
-        // Dynamic import
-        const pdfjs = await import('pdfjs-dist');
-
-        // For server-side, we need to read the worker file and create a data URL
-        // Use the legacy build which works better in Node.js
-        const workerPath = path.join(process.cwd(), 'node_modules', 'pdfjs-dist', 'legacy', 'build', 'pdf.worker.min.js');
-        const workerCode = fs.readFileSync(workerPath);
-        const workerBase64 = workerCode.toString('base64');
-        pdfjs.GlobalWorkerOptions.workerSrc = `data:application/javascript;base64,${workerBase64}`;
-
-        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-        const pdfDocument = await loadingTask.promise;
-
-        const fullText: string[] = [];
-
-        // Extract text from each page
-        for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
-          const page = await pdfDocument.getPage(pageNum);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .map((item: any) => {
-              if ('str' in item) {
-                return item.str;
-              }
-              return '';
-            })
-            .join(' ');
-          fullText.push(pageText);
+        // Ensure temp directory exists
+        const tempDir = process.cwd() + '/temp';
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
         }
 
-        text = fullText.join('\n\n');
+        fs.writeFileSync(tempFilePath, buffer);
+        console.log('Temp file saved:', tempFilePath);
+
+        // Run the parsing script - use absolute path string to avoid Turbopack resolution
+        const scriptPath = process.cwd() + '/scripts/parse-pdf.js';
+
+        try {
+          text = await new Promise<string>((resolve, reject) => {
+            // Use eval to avoid Turbopack's static path resolution
+            // eslint-disable-next-line no-eval
+            const child = eval("require('child_process').spawn")('node', [scriptPath, tempFilePath], {
+              cwd: process.cwd(),
+              stdio: ['pipe', 'pipe', 'pipe']
+            });
+
+            let stdout = '';
+            let stderr = '';
+
+            child.stdout.on('data', (data: Buffer) => {
+              stdout += data.toString();
+            });
+
+            child.stderr.on('data', (data: Buffer) => {
+              stderr += data.toString();
+            });
+
+            child.on('close', (code: number | null) => {
+              // Clean up temp file
+              try {
+                fs.unlinkSync(tempFilePath);
+              } catch (e) {
+                console.error('Failed to delete temp file:', e);
+              }
+
+              if (code !== 0) {
+                console.error('PDF parsing stderr:', stderr);
+                reject(new Error(stderr.split('\n').pop() || 'PDF parsing failed'));
+                return;
+              }
+
+              // Extract text between markers
+              const start = stdout.indexOf('PDF_TEXT_START');
+              const end = stdout.indexOf('PDF_TEXT_END');
+
+              if (start === -1 || end === -1) {
+                reject(new Error('Failed to parse PDF output'));
+                return;
+              }
+
+              const extractedText = stdout.substring(start + 16, end).trim();
+              resolve(extractedText);
+            });
+          });
+
+          console.log('PDF parsed successfully, length:', text.length);
+        } catch (parseError) {
+          console.error('PDF parsing error:', parseError);
+          throw parseError;
+        }
 
         // Check if extracted text is empty (likely a scanned/image PDF)
         if (!text.trim()) {

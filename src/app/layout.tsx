@@ -1,23 +1,22 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Source_Sans_3, Noto_Sans_SC } from "next/font/google";
+import { Outfit, Sora, DM_Sans } from "next/font/google";
 import "./globals.css";
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
   display: "swap",
 });
 
-const sourceSans = Source_Sans_3({
-  variable: "--font-source-sans",
+const sora = Sora({
+  variable: "--font-sora",
   subsets: ["latin"],
   display: "swap",
 });
 
-const notoSansSC = Noto_Sans_SC({
-  variable: "--font-noto-sans-sc",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -32,10 +31,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" className={`${outfit.variable} ${sora.variable} ${dmSans.variable}`}>
       <body
-        className={`${playfair.variable} ${sourceSans.variable} ${notoSansSC.variable} antialiased font-sans`}
-        style={{ fontFamily: 'var(--font-noto-sans-sc), var(--font-source-sans), system-ui, sans-serif' }}
+        className="antialiased"
+        style={{ fontFamily: 'var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif' }}
       >
         {children}
       </body>

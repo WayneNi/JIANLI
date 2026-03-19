@@ -1,5 +1,3 @@
-import type { OptimizedResume } from '@/types/resume';
-
 // Template types
 export type TemplateType = 'simple' | 'professional' | 'creative';
 

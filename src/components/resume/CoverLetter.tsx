@@ -17,13 +17,20 @@ interface CoverLetterData {
 }
 
 const COLORS = {
-  primary: '#1a1f2e',
-  secondary: '#2d3548',
-  accent: '#c9a227',
+  bg: '#FAFAFA',
+  surface: '#FFFFFF',
+  surfaceElevated: '#F8F9FA',
+  primary: '#7C3AED',
+  primaryLight: '#A78BFA',
+  gradientStart: '#667EEA',
+  gradientEnd: '#764BA2',
+  accent: '#EC4899',
+  text: '#111827',
+  textMuted: '#6B7280',
+  textLight: '#9CA3AF',
+  border: '#E5E7EB',
   success: '#059669',
-  surface: '#faf9f7',
-  surfaceDark: '#f0ede8',
-  textMuted: '#6b7280',
+  error: '#DC2626',
 };
 
 export function CoverLetterGenerator({ resumeText, jobDescription }: CoverLetterProps) {
@@ -68,6 +75,7 @@ export function CoverLetterGenerator({ resumeText, jobDescription }: CoverLetter
       }
 
       let fullContent = '';
+      let coverLetterReceived = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -88,6 +96,7 @@ export function CoverLetterGenerator({ resumeText, jobDescription }: CoverLetter
               }
               if (parsed.coverLetter) {
                 setCoverLetter(parsed.coverLetter);
+                coverLetterReceived = true;
               }
             } catch {
               // Skip invalid JSON
@@ -97,19 +106,45 @@ export function CoverLetterGenerator({ resumeText, jobDescription }: CoverLetter
       }
 
       // Try to parse as JSON if not already set
-      if (!coverLetter && fullContent) {
+      if (!coverLetterReceived && fullContent) {
         try {
-          // Clean the response
-          const cleaned = fullContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          // Enhanced cleaning function
+          let cleaned = fullContent;
+
+          // Remove all markdown code blocks with various language tags
+          cleaned = cleaned.replace(/```(?:json|javascript|js|python)?\n?/g, '');
+          cleaned = cleaned.replace(/```\n?/g, '');
+
+          // Try to extract JSON object
+          const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            cleaned = jsonMatch[0];
+            // Fix common JSON issues (trailing commas)
+            cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
+          }
+
           const parsed = JSON.parse(cleaned);
           if (parsed.subject || parsed.content) {
             setCoverLetter(parsed);
           }
         } catch {
-          // If parsing fails, show raw content
+          // If parsing fails, try to extract plain text content
+          const plainText = fullContent
+            .replace(/```[\s\S]*?```/g, '')  // Remove all code blocks
+            .replace(/^.*\{/, '{')  // Remove anything before first {
+            .replace(/\}.*$/, '}')  // Remove anything after last }
+            .replace(/```/g, '')  // Remove any remaining backticks
+            .trim();
+
+          // If still has content, use it; otherwise use raw content
+          const finalContent = plainText.length > 10 ? plainText : fullContent
+            .replace(/```[\s\S]*?```/g, '')
+            .replace(/```/g, '')
+            .trim();
+
           setCoverLetter({
             subject: '求职信',
-            content: fullContent,
+            content: finalContent,
           });
         }
       }
@@ -252,7 +287,7 @@ export function CoverLetterGenerator({ resumeText, jobDescription }: CoverLetter
               ) : (
                 <div
                   className="p-4 rounded-lg whitespace-pre-wrap text-sm"
-                  style={{ backgroundColor: COLORS.surfaceDark, color: COLORS.secondary }}
+                  style={{ backgroundColor: COLORS.surfaceElevated, color: COLORS.text }}
                 >
                   {coverLetter.content}
                 </div>

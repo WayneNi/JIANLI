@@ -1,247 +1,18 @@
 "use client";
 
 import { useState } from 'react';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { Packer } from 'docx';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
-import { Download, FileText, FileType, Loader2 } from 'lucide-react';
+import { FileText, FileType, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { OptimizedResume } from '@/types/resume';
 import { TEMPLATES, type TemplateType } from '@/lib/templates';
 import { ResumePDF } from './PdfTemplate';
+import { generateWordDocument } from '@/lib/doc-generator';
 
 interface DownloadOptionsProps {
   resume: OptimizedResume | null;
-}
-
-// Generate Word document from resume
-function generateWordDocument(resume: OptimizedResume): Document {
-  const children: Paragraph[] = [];
-
-  const summaryLines = resume.summary.split('\n').filter((line) => line.trim());
-  if (summaryLines.length > 0) {
-    children.push(
-      new Paragraph({
-        text: summaryLines[0],
-        heading: HeadingLevel.TITLE,
-        alignment: AlignmentType.LEFT,
-        spacing: {
-          after: 200,
-        },
-      })
-    );
-
-    if (summaryLines.length > 1) {
-      children.push(
-        new Paragraph({
-          children: summaryLines.slice(1).map((line) => new TextRun({
-            text: line,
-            size: 20,
-            color: '666666',
-          })),
-          spacing: {
-            after: 400,
-          },
-        })
-      );
-    }
-  }
-
-  if (resume.summary) {
-    children.push(
-      new Paragraph({
-        text: '个人简介',
-        heading: HeadingLevel.HEADING_1,
-        spacing: {
-          before: 400,
-          after: 200,
-        },
-      })
-    );
-
-    children.push(
-      new Paragraph({
-        text: resume.summary,
-        spacing: {
-          after: 400,
-        },
-      })
-    );
-  }
-
-  if (resume.experience && resume.experience.length > 0) {
-    children.push(
-      new Paragraph({
-        text: '工作经历',
-        heading: HeadingLevel.HEADING_1,
-        spacing: {
-          before: 400,
-          after: 200,
-        },
-      })
-    );
-
-    for (const exp of resume.experience) {
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: exp.company,
-              bold: true,
-              size: 24,
-            }),
-            new TextRun({
-              text: '    ' + exp.duration,
-              size: 20,
-              color: '666666',
-            }),
-          ],
-          spacing: {
-            after: 100,
-          },
-        })
-      );
-
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: exp.position,
-              italics: true,
-            }),
-          ],
-          spacing: {
-            after: 200,
-          },
-        })
-      );
-
-      if (exp.starFormatted) {
-        children.push(
-          new Paragraph({
-            text: exp.starFormatted,
-            spacing: {
-              after: 400,
-            },
-          })
-        );
-      } else if (exp.description) {
-        children.push(
-          new Paragraph({
-            text: exp.description,
-            spacing: {
-              after: 400,
-            },
-          })
-        );
-      }
-    }
-  }
-
-  if (resume.skills && resume.skills.technical.length > 0) {
-    children.push(
-      new Paragraph({
-        text: '技能',
-        heading: HeadingLevel.HEADING_1,
-        spacing: {
-          before: 400,
-          after: 200,
-        },
-      })
-    );
-
-    if (resume.skills.technical.length > 0) {
-      children.push(
-        new Paragraph({
-          text: '技术技能: ' + resume.skills.technical.join(' / '),
-          spacing: {
-            after: 200,
-          },
-        })
-      );
-    }
-
-    if (resume.skills.soft && resume.skills.soft.length > 0) {
-      children.push(
-        new Paragraph({
-          text: '软技能: ' + resume.skills.soft.join(' / '),
-          spacing: {
-            after: 200,
-          },
-        })
-      );
-    }
-
-    if (resume.skills.languages && resume.skills.languages.length > 0) {
-      children.push(
-        new Paragraph({
-          text: '语言能力: ' + resume.skills.languages.join(' / '),
-          spacing: {
-            after: 400,
-          },
-        })
-      );
-    }
-  }
-
-  if (resume.education && resume.education.length > 0) {
-    children.push(
-      new Paragraph({
-        text: '教育背景',
-        heading: HeadingLevel.HEADING_1,
-        spacing: {
-          before: 400,
-          after: 200,
-        },
-      })
-    );
-
-    for (const edu of resume.education) {
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: edu.school,
-              bold: true,
-              size: 24,
-            }),
-            new TextRun({
-              text: ' - ' + edu.degree,
-              size: 24,
-            }),
-            new TextRun({
-              text: '    ' + edu.duration,
-              size: 20,
-              color: '666666',
-            }),
-          ],
-          spacing: {
-            after: 100,
-          },
-        })
-      );
-
-      if (edu.gpa) {
-        children.push(
-          new Paragraph({
-            text: 'GPA: ' + edu.gpa,
-            spacing: {
-              after: 200,
-            },
-          })
-        );
-      }
-    }
-  }
-
-  return new Document({
-    sections: [
-      {
-        properties: {},
-        children,
-      },
-    ],
-  });
 }
 
 export function DownloadOptions({ resume }: DownloadOptionsProps) {
@@ -286,7 +57,7 @@ export function DownloadOptions({ resume }: DownloadOptionsProps) {
     <div className="space-y-4">
       {/* Template Selection */}
       <div>
-        <p className="text-sm font-medium mb-2" style={{ color: '#1a1f2e' }}>
+        <p className="text-sm font-medium mb-2" style={{ color: '#7C3AED' }}>
           选择模板
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -296,13 +67,13 @@ export function DownloadOptions({ resume }: DownloadOptionsProps) {
               onClick={() => setSelectedTemplate(template.id)}
               className={`p-3 rounded-lg border-2 text-left transition-all ${
                 selectedTemplate === template.id
-                  ? 'border-[#c9a227]'
+                  ? 'border-[#7C3AED]'
                   : 'border-transparent hover:border-gray-200'
               }`}
               style={{
                 backgroundColor:
                   selectedTemplate === template.id
-                    ? '#c9a22715'
+                    ? '#7C3AED15'
                     : '#f5f5f5',
               }}
             >
@@ -329,7 +100,7 @@ export function DownloadOptions({ resume }: DownloadOptionsProps) {
           disabled={isGeneratingWord || isGeneratingPdf}
           className="gap-2"
           style={{
-            backgroundColor: '#1a1f2e',
+            backgroundColor: '#7C3AED',
             borderRadius: '4px',
           }}
         >
@@ -351,8 +122,8 @@ export function DownloadOptions({ resume }: DownloadOptionsProps) {
           disabled={isGeneratingWord || isGeneratingPdf}
           className="gap-2"
           style={{
-            backgroundColor: '#c9a227',
-            color: '#1a1f2e',
+            backgroundColor: '#7C3AED',
+            color: '#FFFFFF',
             borderRadius: '4px',
             fontWeight: 600,
           }}

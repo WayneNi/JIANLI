@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Target,
   AlertTriangle,
@@ -21,9 +20,18 @@ interface AtsScoreProps {
 }
 
 const COLORS = {
-  primary: '#1a1f2e',
-  secondary: '#2d3548',
-  accent: '#c9a227',
+  bg: '#FAFAFA',
+  surface: '#FFFFFF',
+  surfaceElevated: '#F8F9FA',
+  primary: '#7C3AED',
+  primaryLight: '#A78BFA',
+  gradientStart: '#667EEA',
+  gradientEnd: '#764BA2',
+  accent: '#EC4899',
+  text: '#111827',
+  textMuted: '#6B7280',
+  textLight: '#9CA3AF',
+  border: '#E5E7EB',
   success: '#059669',
   warning: '#f59e0b',
   error: '#dc2626',
@@ -86,7 +94,7 @@ export function AtsScore({ score, issues, suggestions }: AtsScoreProps) {
             <h3 className="font-semibold" style={{ color: COLORS.primary }}>
               ATS 友好度检测
             </h3>
-            <p className="text-xs" style={{ color: COLORS.secondary }}>
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>
               机筛系统兼容性评分
             </p>
           </div>
@@ -101,7 +109,7 @@ export function AtsScore({ score, issues, suggestions }: AtsScoreProps) {
             >
               {grade}
             </p>
-            <p className="text-xs" style={{ color: COLORS.secondary }}>
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>
               等级
             </p>
           </div>
@@ -116,7 +124,7 @@ export function AtsScore({ score, issues, suggestions }: AtsScoreProps) {
             >
               {score}
             </p>
-            <p className="text-xs" style={{ color: COLORS.secondary }}>
+            <p className="text-xs" style={{ color: COLORS.textMuted }}>
               / 100
             </p>
           </div>
@@ -125,7 +133,7 @@ export function AtsScore({ score, issues, suggestions }: AtsScoreProps) {
         {/* Issues */}
         {issues && issues.length > 0 && (
           <div className="mb-4">
-            <p className="text-xs font-medium uppercase mb-2" style={{ color: COLORS.secondary }}>
+            <p className="text-xs font-medium uppercase mb-2" style={{ color: COLORS.textMuted }}>
               发现问题 ({issues.length})
             </p>
             <div className="space-y-2">
@@ -145,14 +153,14 @@ export function AtsScore({ score, issues, suggestions }: AtsScoreProps) {
                       {issue.category === 'structure' && '结构问题'}
                       {issue.category === 'content' && '内容问题'}
                     </p>
-                    <p className="text-xs" style={{ color: COLORS.secondary }}>
+                    <p className="text-xs" style={{ color: COLORS.textMuted }}>
                       {issue.message}
                     </p>
                   </div>
                 </div>
               ))}
               {issues.length > 4 && (
-                <p className="text-xs text-center" style={{ color: COLORS.secondary }}>
+                <p className="text-xs text-center" style={{ color: COLORS.textMuted }}>
                   还有 {issues.length - 4} 个问题...
                 </p>
               )}
@@ -163,7 +171,7 @@ export function AtsScore({ score, issues, suggestions }: AtsScoreProps) {
         {/* Suggestions */}
         {suggestions && suggestions.length > 0 && (
           <div>
-            <p className="text-xs font-medium uppercase mb-2" style={{ color: COLORS.secondary }}>
+            <p className="text-xs font-medium uppercase mb-2" style={{ color: COLORS.textMuted }}>
               优化建议
             </p>
             <div className="space-y-2">
@@ -174,7 +182,7 @@ export function AtsScore({ score, issues, suggestions }: AtsScoreProps) {
                   style={{ backgroundColor: `${COLORS.success}10` }}
                 >
                   <Lightbulb className="h-4 w-4 flex-shrink-0" style={{ color: COLORS.success }} />
-                  <p className="text-xs" style={{ color: COLORS.secondary }}>
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>
                     {suggestion}
                   </p>
                 </div>

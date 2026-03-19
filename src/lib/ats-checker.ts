@@ -97,12 +97,14 @@ export function analyzeResumeATS(resumeText: string, jobDescription?: string): A
 
   // 3. Structure Checks
   // Check for contact info - Support Chinese labels and various formats
-  const hasEmail = /[\w.-]+@[\w.-]+\.\w+/.test(lowerText) ||
+  const hasEmail = /[\w.-]+@[\w.-]+\.\w+/i.test(resumeText) ||
                    /[邮箱e-mail电邮][：:\s]*[\w.-]+@[\w.-]+\.\w+/i.test(resumeText);
-  // Support Chinese mobile: 13812345678, 138-1234-5678, 0138-12345678
-  const hasPhone = /1[3-9]\d{9}/.test(resumeText) ||
-                   /1[3-9]\d[-.]?\d{4}[-.]?\d{4}/.test(resumeText) ||
-                   /0\d{2,3}[-.]?\d{7,8}/.test(resumeText);
+  // Support Chinese mobile: 13812345678, 138-1234-5678, +86 13812345678
+  const hasPhone =
+    /1[3-9]\d{9}/.test(resumeText) ||
+    /1[3-9]\d{2}[-.]?\d{4}[-.]?\d{4}/.test(resumeText) ||
+    /\+86[\s.-]?1[3-9][\d.-]{9,13}/.test(resumeText) ||
+    /0\d{2,3}[-.]?\d{7,8}/.test(resumeText);
 
   if (!hasEmail) {
     issues.push({
