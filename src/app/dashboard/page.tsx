@@ -163,7 +163,7 @@ export default async function DashboardPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Link href="/">
+              <Link href="/dashboard/optimize">
                 <Button className="w-full bg-gradient-to-r from-violet-600 to-pink-600">
                   新建优化
                 </Button>
@@ -181,7 +181,7 @@ export default async function DashboardPage({
           <CardContent>
             <div className="text-center py-12 text-gray-500">
               <p>暂无优化记录</p>
-              <Link href="/" className="text-violet-600 hover:underline mt-2 inline-block">
+              <Link href="/dashboard/optimize" className="text-violet-600 hover:underline mt-2 inline-block">
                 开始第一次优化
               </Link>
             </div>
