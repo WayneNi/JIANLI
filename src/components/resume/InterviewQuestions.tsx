@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { COLORS } from '@/lib/theme/colors';
 
 interface InterviewQuestionsProps {
   resumeText: string;
@@ -18,23 +19,6 @@ interface InterviewQuestion {
     keyPoints: string[];
   }>;
 }
-
-const COLORS = {
-  bg: '#FAFAFA',
-  surface: '#FFFFFF',
-  surfaceElevated: '#F8F9FA',
-  primary: '#7C3AED',
-  primaryLight: '#A78BFA',
-  gradientStart: '#667EEA',
-  gradientEnd: '#764BA2',
-  accent: '#EC4899',
-  text: '#111827',
-  textMuted: '#6B7280',
-  textLight: '#9CA3AF',
-  border: '#E5E7EB',
-  success: '#059669',
-  error: '#DC2626',
-};
 
 export function InterviewQuestionsGenerator({ resumeText, jobDescription }: InterviewQuestionsProps) {
   const [isGenerating, setIsGenerating] = useState(false);

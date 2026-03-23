@@ -8,6 +8,7 @@ import {
   XCircle,
   Lightbulb,
 } from 'lucide-react';
+import { COLORS } from '@/lib/theme/colors';
 
 interface AtsScoreProps {
   score: number;
@@ -18,24 +19,6 @@ interface AtsScoreProps {
   }>;
   suggestions: string[];
 }
-
-const COLORS = {
-  bg: '#FAFAFA',
-  surface: '#FFFFFF',
-  surfaceElevated: '#F8F9FA',
-  primary: '#7C3AED',
-  primaryLight: '#A78BFA',
-  gradientStart: '#667EEA',
-  gradientEnd: '#764BA2',
-  accent: '#EC4899',
-  text: '#111827',
-  textMuted: '#6B7280',
-  textLight: '#9CA3AF',
-  border: '#E5E7EB',
-  success: '#059669',
-  warning: '#f59e0b',
-  error: '#dc2626',
-};
 
 export function AtsScore({ score, issues, suggestions }: AtsScoreProps) {
   const getGradeColor = (grade: string) => {

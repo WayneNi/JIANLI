@@ -10,29 +10,13 @@ import {
   X,
 } from 'lucide-react';
 import type { OptimizedResume } from '@/types/resume';
+import { COLORS } from '@/lib/theme/colors';
 
 interface CompareViewProps {
   originalText: string;
   optimizedResume: OptimizedResume;
   onClose: () => void;
 }
-
-const COLORS = {
-  bg: '#FAFAFA',
-  surface: '#FFFFFF',
-  surfaceElevated: '#F8F9FA',
-  primary: '#7C3AED',
-  primaryLight: '#A78BFA',
-  gradientStart: '#667EEA',
-  gradientEnd: '#764BA2',
-  accent: '#EC4899',
-  text: '#111827',
-  textMuted: '#6B7280',
-  textLight: '#9CA3AF',
-  border: '#E5E7EB',
-  success: '#059669',
-  error: '#DC2626',
-};
 
 export function CompareView({
   originalText,

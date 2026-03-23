@@ -4,29 +4,12 @@ import { useState } from 'react';
 import { FileSearch, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { COLORS } from '@/lib/theme/colors';
 
 interface JobDescriptionInputProps {
   value: string;
   onChange: (value: string) => void;
 }
-
-// Purple-Blue Gradient Theme
-const COLORS = {
-  bg: '#FAFAFA',
-  surface: '#FFFFFF',
-  surfaceElevated: '#F8F9FA',
-  primary: '#7C3AED',
-  primaryLight: '#A78BFA',
-  gradientStart: '#667EEA',
-  gradientEnd: '#764BA2',
-  accent: '#EC4899',
-  text: '#111827',
-  textMuted: '#6B7280',
-  textLight: '#9CA3AF',
-  border: '#E5E7EB',
-  success: '#059669',
-  error: '#DC2626',
-};
 
 export function JobDescriptionInput({
   value,

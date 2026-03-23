@@ -32,6 +32,7 @@ import type {
 } from '@/types/resume';
 import { STATUS_MESSAGES } from '@/lib/ai-prompts';
 import { AtsScore } from './AtsScore';
+import { COLORS } from '@/lib/theme/colors';
 
 interface PreviewPanelProps {
   isOptimizing: boolean;
@@ -39,24 +40,6 @@ interface PreviewPanelProps {
   status: OptimizeStatus;
   resume?: OptimizedResume | null;
 }
-
-// Design tokens - Purple-Blue Gradient Theme
-const COLORS = {
-  bg: '#FAFAFA',
-  surface: '#FFFFFF',
-  surfaceElevated: '#F8F9FA',
-  primary: '#7C3AED',
-  primaryLight: '#A78BFA',
-  gradientStart: '#667EEA',
-  gradientEnd: '#764BA2',
-  accent: '#EC4899',
-  text: '#111827',
-  textMuted: '#6B7280',
-  textLight: '#9CA3AF',
-  border: '#E5E7EB',
-  success: '#059669',
-  error: '#DC2626',
-};
 
 export function PreviewPanel({
   isOptimizing,

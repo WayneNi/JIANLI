@@ -4,29 +4,12 @@ import { useState, useCallback } from 'react';
 import { Upload, FileText, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { COLORS } from '@/lib/theme/colors';
 
 interface UploadZoneProps {
   onFileSelect: (file: File, text: string) => void;
   isLoading: boolean;
 }
-
-// Purple-Blue Gradient Theme
-const COLORS = {
-  bg: '#FAFAFA',
-  surface: '#FFFFFF',
-  surfaceElevated: '#F8F9FA',
-  primary: '#7C3AED',
-  primaryLight: '#A78BFA',
-  gradientStart: '#667EEA',
-  gradientEnd: '#764BA2',
-  accent: '#EC4899',
-  text: '#111827',
-  textMuted: '#6B7280',
-  textLight: '#9CA3AF',
-  border: '#E5E7EB',
-  success: '#059669',
-  error: '#DC2626',
-};
 
 export function UploadZone({ onFileSelect, isLoading }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);

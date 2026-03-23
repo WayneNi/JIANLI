@@ -57,17 +57,6 @@ export const SYSTEM_PROMPT = `你是一位专业的简历优化专家，擅长�
 - 使用主动动词：主导、构建、优化、提升、设计、开发、管理
 - 避免弱动词：协助、参与、负责（单独使用）、帮助`;
 
-export const ANALYSIS_PROMPT = (resumeText: string, jobDescription?: string) => `
-## 简历内容
-${resumeText}
-
-${jobDescription ? `## 目标岗位 JD
-${jobDescription}` : ''}
-
-请分析以上简历内容，按照系统提示中的要求进行优化。
-
-**重要：必须返回纯 JSON 格式，不要包含任何解释性文本或markdown代码块。**`;
-
 export const STATUS_MESSAGES: Record<string, string> = {
   parsing: '正在解析简历文件...',
   analyzing: '正在分析经历描述...',
