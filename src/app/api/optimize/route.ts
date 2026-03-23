@@ -53,7 +53,7 @@ async function callMiniMaxAPI(
   prompt: string,
   systemPrompt: string = SYSTEM_PROMPT,
   stream: boolean = true,
-  maxTokens: number = 4096 // Reduced from 8192 for faster responses
+  maxTokens: number = 8192
 ) {
   const apiKey = process.env.MINIMAX_API_KEY;
 
@@ -304,7 +304,7 @@ export async function POST(req: NextRequest) {
                 true,
                 2048 // Smaller for faster suggestion response
               ),
-              callMiniMaxAPI(optimizePrompt, SYSTEM_PROMPT, true, 4096),
+              callMiniMaxAPI(optimizePrompt, SYSTEM_PROMPT, true, 8192),
             ]);
 
             // Stream optimize response while collecting suggestion text
@@ -376,7 +376,7 @@ export async function POST(req: NextRequest) {
             const atsCheckPromise = Promise.resolve().then(() => analyzeResumeATS(resumeText, jobDescription));
 
             const optimizePrompt = OPTIMIZE_PROMPT(resumeText, jobDescription);
-            const optimizeResponse = await callMiniMaxAPI(optimizePrompt, SYSTEM_PROMPT, true, 4096);
+            const optimizeResponse = await callMiniMaxAPI(optimizePrompt, SYSTEM_PROMPT, true, 8192);
 
             let fullResponse = '';
             for await (const content of streamAIResponse(optimizeResponse)) {

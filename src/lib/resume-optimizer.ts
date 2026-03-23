@@ -106,85 +106,146 @@ export function parseSuggestionResponse(rawJson: string): ResumeSuggestion {
 
 /**
  * Parse raw AI response to resume object
+ * Handles truncated responses by trying multiple strategies
  */
 export function parseAIResponse(rawJson: string): OptimizedResume {
+  let jsonStr = rawJson.trim();
+
+  // Remove all markdown code blocks (including malformed ones like }````json)
+  jsonStr = jsonStr.replace(/```json\n?/g, '');
+  jsonStr = jsonStr.replace(/```\n?/g, '');
+  // Also handle cases where backticks are missing separation
+  jsonStr = jsonStr.replace(/`+/g, '');
+
+  let parsed: {
+    summary?: unknown;
+    experience?: unknown;
+    skills?: {
+      technical?: unknown;
+      soft?: unknown;
+      languages?: unknown;
+    };
+    education?: unknown;
+  } | null = null;
+  let lastError: Error | null = null;
+
+  // Strategy 1: Try parsing the whole string first
   try {
-    let jsonStr = rawJson.trim();
+    parsed = JSON.parse(jsonStr);
+  } catch (e) {
+    lastError = e as Error;
+  }
 
-    // Remove all markdown code blocks (including malformed ones like }````json)
-    jsonStr = jsonStr.replace(/```json\n?/g, '');
-    jsonStr = jsonStr.replace(/```\n?/g, '');
-    // Also handle cases where backticks are missing separation
-    jsonStr = jsonStr.replace(/`+/g, '');
-
-    // Split by the pattern that separates two JSON objects
-    // Looking for patterns like: }{ or } `` `json {
+  // Strategy 2: Split by }{ and try each part (handles duplicate JSON)
+  if (!parsed) {
     const parts = jsonStr.split(/(?<=})\s*(?=\{)/);
-
-    // Try to find valid JSON in the response
-    let parsed = null;
-
-    // Try parsing the whole string first
-    try {
-      parsed = JSON.parse(jsonStr);
-    } catch {
-      // If that fails, try each part
-      for (const part of parts) {
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
         try {
-          const trimmed = part.trim();
-          if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-            parsed = JSON.parse(trimmed);
+          const testParsed = JSON.parse(trimmed);
+          if (testParsed.summary || testParsed.experience || testParsed.skills) {
+            parsed = testParsed;
             break;
           }
-        } catch {
-          continue;
+        } catch (e) {
+          lastError = e as Error;
         }
       }
     }
+  }
 
-    // If still not parsed, try regex extraction
-    if (!parsed) {
-      // Find the last complete JSON object
-      const matches = jsonStr.match(/\{[\s\S]*\}/g);
-      if (matches) {
-        for (let i = matches.length - 1; i >= 0; i--) {
+  // Strategy 3: Regex extraction for potentially truncated JSON
+  if (!parsed) {
+    // Try to find the main resume object by looking for known keys
+    const mainKeys = ['"summary"', '"experience"', '"skills"', '"education"'];
+    for (const key of mainKeys) {
+      const idx = jsonStr.indexOf(key);
+      if (idx !== -1) {
+        // Find the opening brace before this key
+        let braceStart = idx;
+        while (braceStart > 0 && jsonStr[braceStart] !== '{') {
+          braceStart--;
+        }
+        // Try to extract complete JSON from this point using bracket counting
+        let braceCount = 0;
+        for (let i = braceStart; i < jsonStr.length; i++) {
+          if (jsonStr[i] === '{') braceCount++;
+          if (jsonStr[i] === '}') braceCount--;
+          if (braceCount === 0 && i > braceStart) {
+            const candidate = jsonStr.slice(braceStart, i + 1);
+            try {
+              const testParsed = JSON.parse(candidate);
+              if (testParsed.summary || testParsed.experience || testParsed.skills) {
+                parsed = testParsed;
+                break;
+              }
+            } catch {
+              // Continue
+            }
+            break;
+          }
+        }
+        if (parsed) break;
+      }
+    }
+  }
+
+  // Strategy 4: Try to fix truncated JSON by completing braces
+  if (!parsed && jsonStr.startsWith('{')) {
+    // Count unclosed braces
+    let braceCount = 0;
+    for (const ch of jsonStr) {
+      if (ch === '{') braceCount++;
+      if (ch === '}') braceCount--;
+    }
+    // If unclosed, try completing the JSON structure
+    if (braceCount > 0) {
+      const fixed = jsonStr + ']}'.repeat(braceCount);
+      try {
+        const testParsed = JSON.parse(fixed);
+        if (testParsed.summary || testParsed.experience || testParsed.skills) {
+          parsed = testParsed;
+        }
+      } catch {
+        // Try another approach - truncate at last complete item
+        const lastCloseBrace = jsonStr.lastIndexOf('}');
+        if (lastCloseBrace > 0) {
+          const truncated = jsonStr.slice(0, lastCloseBrace + 1);
           try {
-            const testParsed = JSON.parse(matches[i]);
+            const testParsed = JSON.parse(truncated);
             if (testParsed.summary || testParsed.experience || testParsed.skills) {
               parsed = testParsed;
-              break;
             }
           } catch {
-            continue;
+            // Give up
           }
         }
       }
     }
+  }
 
-    if (!parsed) {
-      console.error('Raw response:', jsonStr);
-      throw new Error('Invalid JSON response');
-    }
-
-    // Validate and sanitize
-    return {
-      summary: parsed.summary || '',
-      experience: Array.isArray(parsed.experience) ? parsed.experience : [],
-      skills: {
-        technical: Array.isArray(parsed.skills?.technical)
-          ? parsed.skills.technical
-          : [],
-        soft: Array.isArray(parsed.skills?.soft) ? parsed.skills.soft : [],
-        languages: Array.isArray(parsed.skills?.languages)
-          ? parsed.skills.languages
-          : [],
-      },
-      education: Array.isArray(parsed.education) ? parsed.education : [],
-    };
-  } catch (error) {
-    console.error('Failed to parse AI response:', error);
+  if (!parsed) {
+    console.error('Raw response:', jsonStr.substring(0, 500));
+    console.error('Parse error:', lastError);
     throw new Error('无法解析 AI 响应，请重试');
   }
+
+  // Validate and sanitize
+  return {
+    summary: parsed.summary || '',
+    experience: Array.isArray(parsed.experience) ? parsed.experience : [],
+    skills: {
+      technical: Array.isArray(parsed.skills?.technical)
+        ? parsed.skills.technical
+        : [],
+      soft: Array.isArray(parsed.skills?.soft) ? parsed.skills.soft : [],
+      languages: Array.isArray(parsed.skills?.languages)
+        ? parsed.skills.languages
+        : [],
+    },
+    education: Array.isArray(parsed.education) ? parsed.education : [],
+  };
 }
 
 /**
