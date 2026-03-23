@@ -16,12 +16,20 @@ declare module 'next-auth' {
       subscriptionTier: SubscriptionTier
       usageCount: number
       resetDate: Date
+      credits: number
+      isLifetime: boolean
+      freeUsageCount: number
+      freeResetDate: Date
     }
   }
   interface User {
     subscriptionTier?: SubscriptionTier
     usageCount?: number
     resetDate?: Date
+    credits?: number
+    isLifetime?: boolean
+    freeUsageCount?: number
+    freeResetDate?: Date
   }
 }
 
@@ -31,6 +39,10 @@ declare module 'next-auth/jwt' {
     subscriptionTier: SubscriptionTier
     usageCount: number
     resetDate: Date
+    credits: number
+    isLifetime: boolean
+    freeUsageCount: number
+    freeResetDate: Date
   }
 }
 
@@ -69,7 +81,11 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           subscriptionTier: user.subscriptionTier,
           usageCount: user.usageCount,
-          resetDate: user.resetDate
+          resetDate: user.resetDate,
+          credits: user.credits,
+          isLifetime: user.isLifetime,
+          freeUsageCount: user.freeUsageCount,
+          freeResetDate: user.freeResetDate,
         }
       }
     }),
@@ -89,12 +105,19 @@ export const authOptions: NextAuthOptions = {
         token.subscriptionTier = user.subscriptionTier ?? 'FREE'
         token.usageCount = user.usageCount ?? 0
         token.resetDate = user.resetDate ?? new Date()
+        token.credits = user.credits ?? 0
+        token.isLifetime = user.isLifetime ?? false
+        token.freeUsageCount = user.freeUsageCount ?? 0
+        token.freeResetDate = user.freeResetDate ?? new Date()
       }
 
       // 处理会话更新（如用户修改了订阅）
       if (trigger === 'update' && session) {
         token.subscriptionTier = session.subscriptionTier
         token.usageCount = session.usageCount
+        token.credits = session.credits
+        token.isLifetime = session.isLifetime
+        token.freeUsageCount = session.freeUsageCount
       }
 
       return token
@@ -112,13 +135,15 @@ export const authOptions: NextAuthOptions = {
         const isNewMonth = now.getMonth() !== resetDate.getMonth() ||
                            now.getFullYear() !== resetDate.getFullYear()
 
-        if (isNewMonth && dbUser.subscriptionTier === 'FREE') {
-          // 重置免费用户配额
+        if (isNewMonth) {
+          // 重置免费用户配额和月度配额
           await prisma.user.update({
             where: { id: token.id },
             data: {
               usageCount: 0,
-              resetDate: now
+              resetDate: now,
+              freeUsageCount: 0,
+              freeResetDate: now,
             }
           })
         }
@@ -129,8 +154,12 @@ export const authOptions: NextAuthOptions = {
           name: dbUser.name,
           image: dbUser.image,
           subscriptionTier: dbUser.subscriptionTier,
-          usageCount: isNewMonth && dbUser.subscriptionTier === 'FREE' ? 0 : dbUser.usageCount,
-          resetDate: isNewMonth ? now : dbUser.resetDate
+          usageCount: isNewMonth ? 0 : dbUser.usageCount,
+          resetDate: isNewMonth ? now : dbUser.resetDate,
+          credits: dbUser.credits,
+          isLifetime: dbUser.isLifetime,
+          freeUsageCount: isNewMonth ? 0 : dbUser.freeUsageCount,
+          freeResetDate: isNewMonth ? now : dbUser.freeResetDate,
         }
       }
 

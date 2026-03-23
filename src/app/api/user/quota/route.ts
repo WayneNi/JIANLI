@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/auth.config'
-import prisma from '@/lib/db'
+import { getCreditInfo } from '@/lib/credit'
 
-// 获取用户当前配额状态
+// 获取用户当前配额状态 (Legacy - redirects to /api/credits)
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -12,57 +12,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: '未登录' }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        subscriptionTier: true,
-        usageCount: true,
-        resetDate: true
-      }
-    })
+    const creditInfo = await getCreditInfo(session.user.id)
 
-    if (!user) {
+    if (!creditInfo) {
       return NextResponse.json({ error: '用户不存在' }, { status: 404 })
     }
 
-    // 检查是否需要重置配额
-    const now = new Date()
-    const resetDate = new Date(user.resetDate)
-    const isNewMonth = now.getMonth() !== resetDate.getMonth() ||
-                       now.getFullYear() !== resetDate.getFullYear()
-
-    let usageCount = user.usageCount
-    let resetDateValue = user.resetDate
-
-    // 如果是新月且是免费用户，重置配额
-    if (isNewMonth && user.subscriptionTier === 'FREE') {
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: {
-          usageCount: 0,
-          resetDate: now
-        }
-      })
-      usageCount = 0
-      resetDateValue = now
-    }
-
-    // 配额限制
-    const limits = {
-      FREE: 3,
-      PRO: Infinity,
-      PREMIUM: Infinity,
-      ENTERPRISE: Infinity
-    }
-
-    const limit = limits[user.subscriptionTier] ?? 3
-
     return NextResponse.json({
-      tier: user.subscriptionTier,
-      usageCount,
-      limit,
-      resetDate: resetDateValue,
-      isLimited: user.subscriptionTier === 'FREE'
+      credits: creditInfo.credits,
+      isLifetime: creditInfo.isLifetime,
+      freeQuotaUsed: creditInfo.freeQuotaUsed,
+      freeQuotaRemaining: creditInfo.freeQuotaRemaining,
+      freeResetDate: creditInfo.freeResetDate,
     })
   } catch (error) {
     console.error('Quota check error:', error)
@@ -70,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// 消耗一次配额
+// 消耗一次配额 (Legacy - redirects to /api/credits/consume)
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -79,58 +40,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '未登录' }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id }
+    const body = await req.json()
+    const { feature } = body
+
+    // Legacy: if no feature specified, assume OPTIMIZE
+    const featureType = feature || 'OPTIMIZE'
+
+    // Forward to credits consume API
+    const res = await fetch(`${req.nextUrl.origin}/api/credits/consume`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feature: featureType }),
     })
 
-    if (!user) {
-      return NextResponse.json({ error: '用户不存在' }, { status: 404 })
-    }
-
-    // 非免费用户不受限制
-    if (user.subscriptionTier !== 'FREE') {
-      return NextResponse.json({ success: true, reason: 'paid_user' })
-    }
-
-    // 检查是否需要重置配额
-    const now = new Date()
-    const resetDate = new Date(user.resetDate)
-    const isNewMonth = now.getMonth() !== resetDate.getMonth() ||
-                       now.getFullYear() !== resetDate.getFullYear()
-
-    if (isNewMonth) {
-      // 重置并允许本次使用
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: {
-          usageCount: 1,
-          resetDate: now
-        }
-      })
-      return NextResponse.json({ success: true, remaining: 2 })
-    }
-
-    // 检查配额
-    if (user.usageCount >= 3) {
-      return NextResponse.json({
-        error: '配额已用完',
-        code: 'QUOTA_EXCEEDED',
-        upgradeUrl: '/pricing'
-      }, { status: 403 })
-    }
-
-    // 消耗配额
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        usageCount: user.usageCount + 1
-      }
-    })
-
-    return NextResponse.json({
-      success: true,
-      remaining: 2 - user.usageCount
-    })
+    const data = await res.json()
+    return NextResponse.json(data, { status: res.status })
   } catch (error) {
     console.error('Quota consumption error:', error)
     return NextResponse.json({ error: '配额更新失败' }, { status: 500 })

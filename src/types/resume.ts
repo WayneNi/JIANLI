@@ -90,7 +90,7 @@ export type OptimizeStatus =
   | 'error';
 
 export interface StreamChunk {
-  type: 'status' | 'content' | 'error' | 'done' | 'suggestion' | 'ats';
+  type: 'status' | 'content' | 'error' | 'done' | 'suggestion' | 'ats' | 'credits';
   status?: OptimizeStatus;
   message?: string;
   content?: string;
@@ -109,4 +109,6 @@ export interface StreamChunk {
       keyPoints: string[];
     }>;
   }>;
+  remaining?: number;
+  reason?: 'lifetime' | 'free' | 'credits';
 }

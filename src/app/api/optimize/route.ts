@@ -1,7 +1,10 @@
 import { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/auth.config';
 import { SYSTEM_PROMPT, SUGGESTION_PROMPT, OPTIMIZE_PROMPT, COVER_LETTER_PROMPT, INTERVIEW_QUESTIONS_PROMPT } from '@/lib/ai-prompts';
 import { parseAIResponse, parseSuggestionResponse } from '@/lib/resume-optimizer';
 import { analyzeResumeATS } from '@/lib/ats-checker';
+import { checkCredits, consumeCredits, reserveCredits, refundCredits } from '@/lib/credit';
 import type { StreamChunk, ResumeSuggestion, OptimizedResume } from '@/types/resume';
 
 // MiniMax API endpoint
@@ -66,7 +69,7 @@ async function callMiniMaxAPI(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'abab6.5s-chat',
+      model: 'abab5.5s-chat',
       messages: [
         {
           role: 'system',
@@ -123,12 +126,35 @@ async function* streamAIResponse(response: Response): AsyncGenerator<string> {
 
         try {
           const parsed = JSON.parse(data);
-          const content = parsed.choices?.[0]?.delta?.content || parsed.choices?.[0]?.message?.content || '';
+          // Debug logging for troubleshooting MiniMax API responses
+          console.log('[MiniMax] Raw response keys:', Object.keys(parsed));
+          if (parsed.choices && parsed.choices[0]) {
+            const choice = parsed.choices[0];
+            console.log('[MiniMax] Choice keys:', Object.keys(choice));
+            // Log all potential content fields
+            console.log('[MiniMax] delta:', JSON.stringify(choice.delta)?.substring(0, 200));
+            console.log('[MiniMax] message.content:', choice.message?.content?.substring(0, 200));
+            console.log('[MiniMax] text:', choice.text?.substring(0, 200));
+            console.log('[MiniMax] content:', choice.content?.substring(0, 200));
+            console.log('[MiniMax] parsed.text:', parsed.text?.substring(0, 200));
+          }
+          // Enhanced content extraction - check all possible fields
+          const choice = parsed.choices?.[0];
+          const content =
+            choice?.delta?.content ||
+            choice?.message?.content ||
+            choice?.text ||
+            choice?.content ||
+            parsed.text ||
+            '';
+          if (content) {
+            console.log('[MiniMax] Yielding content, length:', content.length);
+          }
           if (content) {
             yield content;
           }
-        } catch {
-          // Skip invalid JSON
+        } catch (e) {
+          console.error('[MiniMax] Parse error:', e, 'Raw data:', data.substring(0, 200));
         }
       }
     }
@@ -137,17 +163,26 @@ async function* streamAIResponse(response: Response): AsyncGenerator<string> {
 
 export async function POST(req: NextRequest) {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return new Response(
+        JSON.stringify({ error: '请先登录' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const body = await req.json();
     const { resumeText, jobDescription, action } = body;
 
     // Handle cover letter generation request
     if (action === 'coverLetter') {
-      return handleCoverLetterGeneration(resumeText, jobDescription);
+      return handleCoverLetterGeneration(resumeText, jobDescription, session.user.id);
     }
 
     // Handle interview questions generation request
     if (action === 'interviewQuestions') {
-      return handleInterviewQuestionsGeneration(resumeText, jobDescription);
+      return handleInterviewQuestionsGeneration(resumeText, jobDescription, session.user.id);
     }
 
     if (!resumeText) {
@@ -155,6 +190,24 @@ export async function POST(req: NextRequest) {
         JSON.stringify({ error: 'resumeText is required' }),
         {
           status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Reserve credits before starting optimization (atomic operation to prevent race conditions)
+    const creditReservation = await reserveCredits(session.user.id, 'OPTIMIZE');
+    if (!creditReservation.success) {
+      return new Response(
+        JSON.stringify({
+          error: creditReservation.error || '积分不足',
+          code: creditReservation.error?.includes('不足') ? 'NO_CREDITS' : 'RESERVATION_FAILED',
+          required: creditReservation.cost,
+          remaining: creditReservation.remaining,
+          upgradeUrl: '/pricing',
+        }),
+        {
+          status: 402,
           headers: { 'Content-Type': 'application/json' },
         }
       );
@@ -173,6 +226,10 @@ export async function POST(req: NextRequest) {
           // Check cache first
           const cachedResult = getCachedResult(resumeText, jobDescription);
           if (cachedResult) {
+            // Cache hit - refund the reserved credits since no API call was made
+            if (creditReservation.success && creditReservation.cost && creditReservation.cost > 0) {
+              await refundCredits(session.user.id, 'OPTIMIZE', creditReservation.cost);
+            }
             // Send cached result immediately
             controller.enqueue(
               sendChunk({
@@ -351,6 +408,17 @@ export async function POST(req: NextRequest) {
           // Cache the result
           setCachedResult(resumeText, jobDescription, { optimized, suggestion });
 
+          // Report remaining credits (already deducted via reserveCredits)
+          if (creditReservation.remaining !== undefined) {
+            controller.enqueue(
+              sendChunk({
+                type: 'credits',
+                remaining: creditReservation.remaining,
+                reason: 'credits',
+              })
+            );
+          }
+
           // Parse the final response
           controller.enqueue(
             sendChunk({
@@ -373,6 +441,10 @@ export async function POST(req: NextRequest) {
           controller.close();
         } catch (error) {
           console.error('Stream error:', error);
+          // Refund credits if optimization failed
+          if (creditReservation.success && creditReservation.cost && creditReservation.cost > 0) {
+            await refundCredits(session.user.id, 'OPTIMIZE', creditReservation.cost);
+          }
           controller.enqueue(
             sendChunk({
               type: 'error',
@@ -407,7 +479,25 @@ export async function POST(req: NextRequest) {
 }
 
 // Cover Letter Generation Handler
-async function handleCoverLetterGeneration(resumeText: string, jobDescription?: string) {
+async function handleCoverLetterGeneration(resumeText: string, jobDescription: string | undefined, userId: string) {
+  // Check credits for cover letter
+  const creditCheck = await checkCredits(userId, 'COVER_LETTER');
+  if (!creditCheck.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: creditCheck.message || '积分不足',
+        code: creditCheck.error,
+        required: creditCheck.required,
+        remaining: creditCheck.remaining,
+        upgradeUrl: '/pricing',
+      }),
+      {
+        status: creditCheck.error === 'NO_CREDITS' ? 402 : 403,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
   const encoder = new TextEncoder();
 
   const sendChunk = (chunk: StreamChunk) => {
@@ -451,6 +541,18 @@ async function handleCoverLetterGeneration(resumeText: string, jobDescription?: 
           };
         }
 
+        // Consume credits after successful generation
+        const consumeResult = await consumeCredits(userId, 'COVER_LETTER');
+        if (consumeResult.remaining !== undefined) {
+          controller.enqueue(
+            sendChunk({
+              type: 'credits',
+              remaining: consumeResult.remaining,
+              reason: consumeResult.reason,
+            })
+          );
+        }
+
         controller.enqueue(
           sendChunk({
             type: 'done',
@@ -482,7 +584,25 @@ async function handleCoverLetterGeneration(resumeText: string, jobDescription?: 
 }
 
 // Interview Questions Generation Handler
-async function handleInterviewQuestionsGeneration(resumeText: string, jobDescription?: string) {
+async function handleInterviewQuestionsGeneration(resumeText: string, jobDescription: string | undefined, userId: string) {
+  // Check credits for interview questions
+  const creditCheck = await checkCredits(userId, 'INTERVIEW');
+  if (!creditCheck.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: creditCheck.message || '积分不足',
+        code: creditCheck.error,
+        required: creditCheck.required,
+        remaining: creditCheck.remaining,
+        upgradeUrl: '/pricing',
+      }),
+      {
+        status: creditCheck.error === 'NO_CREDITS' ? 402 : 403,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
   const encoder = new TextEncoder();
 
   const sendChunk = (chunk: StreamChunk) => {
@@ -521,6 +641,18 @@ async function handleInterviewQuestionsGeneration(resumeText: string, jobDescrip
           interviewQuestions = parsed.questions || [];
         } catch {
           interviewQuestions = [];
+        }
+
+        // Consume credits after successful generation
+        const consumeResult = await consumeCredits(userId, 'INTERVIEW');
+        if (consumeResult.remaining !== undefined) {
+          controller.enqueue(
+            sendChunk({
+              type: 'credits',
+              remaining: consumeResult.remaining,
+              reason: consumeResult.reason,
+            })
+          );
         }
 
         controller.enqueue(

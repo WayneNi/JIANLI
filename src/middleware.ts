@@ -20,7 +20,13 @@ export default withAuth(
         const path = req.nextUrl.pathname
 
         // 保护这些路由
-        const protectedPaths = ['/dashboard', '/settings', '/api/user']
+        const protectedPaths = [
+          '/dashboard',
+          '/settings',
+          '/api/user',
+          '/api/payments',
+          '/api/credits',
+        ]
         const isProtectedPath = protectedPaths.some(p => path.startsWith(p))
 
         // 如果是受保护的路径但没有 token
@@ -38,6 +44,8 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/settings/:path*',
-    '/api/user/:path*'
+    '/api/user/:path*',
+    '/api/payments/:path*',
+    '/api/credits/:path*',
   ]
 }

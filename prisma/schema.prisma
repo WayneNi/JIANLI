@@ -21,10 +21,18 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // 订阅相关
+  // 订阅相关 (Legacy - 保留兼容)
   subscriptionTier SubscriptionTier @default(FREE)
   usageCount       Int             @default(0)
   resetDate        DateTime        @default(now())
+
+  // 积分相关
+  credits         Int             @default(0)    // 当前积分余额
+  isLifetime      Boolean         @default(false) // 是否终身会员
+
+  // 免费额度（与 SubscriptionTier 保留兼容）
+  freeUsageCount  Int             @default(0)    // 当月已使用免费次数
+  freeResetDate   DateTime        @default(now()) // 免费额度重置日期
 
   // 关联关系
   accounts    Account[]
@@ -32,6 +40,7 @@ model User {
   resumes      Resume[]
   subscriptions Subscription[]
   teamMembers   TeamMember[]
+  payments      Payment[]
 
   @@map("users")
 }
@@ -160,6 +169,23 @@ model ApiKey {
   @@map("api_keys")
 }
 
+// 支付记录表
+model Payment {
+  id              String   @id @default(cuid())
+  userId          String
+  type            PaymentType
+  amount          Int          // 充值金额（分）
+  credits         Int?         // 充值积分（仅 CREDIT）
+  stripePaymentId String?
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("payments")
+}
+
 // 枚举定义
 enum SubscriptionTier {
   FREE
@@ -185,4 +211,15 @@ enum TeamRole {
   OWNER
   ADMIN
   MEMBER
+}
+
+enum PaymentType {
+  CREDIT
+  LIFETIME
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }

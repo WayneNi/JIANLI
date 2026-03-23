@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Sparkles, Zap, Shield, ArrowRight, FileText, CheckCircle2, TrendingUp, Eye, Download, RefreshCw, Star, ChevronDown, ChevronUp, X, Wand2, Target, Award } from 'lucide-react';
+import { Sparkles, Zap, Shield, ArrowRight, FileText, CheckCircle2, TrendingUp, Eye, Download, RefreshCw, Star, Crown, Gem, ChevronDown, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,23 +16,31 @@ import { JobDescriptionInput } from '@/components/resume/JobDescriptionInput';
 
 import type { OptimizeStatus, StreamChunk, OptimizedResume } from '@/types/resume';
 
-// Design Tokens - Modern Gradient Premium
+// Design tokens - Black & Gold Luxury Theme
 const COLORS = {
-  bg: '#FAFAFA',
-  surface: '#FFFFFF',
-  surfaceElevated: '#FFFFFF',
-  primary: '#7C3AED',
-  primaryLight: '#A78BFA',
-  gradientStart: '#667EEA',
-  gradientEnd: '#764BA2',
-  accent: '#EC4899',
-  text: '#111827',
-  textMuted: '#6B7280',
-  textLight: '#9CA3AF',
-  border: '#E5E7EB',
-  success: '#059669',
-  warning: '#F59E0B',
+  darkBg: '#050508',           // Deepest black
+  darkSurface: '#0a0a10',      // Card backgrounds
+  darkElevated: '#12121a',     // Elevated surfaces
+  gold: '#c9a227',             // Primary gold
+  goldLight: '#e8d48a',        // Light gold
+  goldBright: '#ffd700',       // Bright gold for accents
+  goldDark: '#8b7019',         // Dark gold
+  text: '#ffffff',             // White text
+  textMuted: '#888888',        // Muted text
+  textDim: '#555555',          // Dimmed text
+  success: '#059669',          // Emerald
+  border: '#1a1a24',           // Subtle borders
 };
+
+// Particle configuration
+const PARTICLES = Array.from({ length: 50 }, (_, i) => ({
+  id: i,
+  x: Math.random() * 100,
+  y: Math.random() * 100,
+  size: Math.random() * 3 + 1,
+  duration: Math.random() * 20 + 10,
+  delay: Math.random() * 10,
+}));
 
 export default function Home() {
   const [resumeText, setResumeText] = useState('');
@@ -43,17 +51,11 @@ export default function Home() {
   const [optimizedResume, setOptimizedResume] = useState<OptimizedResume | null>(null);
   const [showCompare, setShowCompare] = useState(false);
   const [activeTab, setActiveTab] = useState<'cover' | 'interview'>('cover');
-  const [showHowItWorks, setShowHowItWorks] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleFileSelect = useCallback((file: File, text: string) => {
-    // Reset all optimization state when a new file is selected
     setResumeText(text);
-    setOptimizedResume(null);
-    setStreamData([]);
-    setShowCompare(false);
     setStatus('parsing');
-    setIsOptimizing(false);
   }, []);
 
   const handleOptimize = useCallback(async () => {
@@ -128,7 +130,7 @@ export default function Home() {
     }
   }, [resumeText, jobDescription]);
 
-  // Ambient background animation
+  // Canvas particle animation
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -139,50 +141,51 @@ export default function Home() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const shapes: Array<{
+    const particles: Array<{
       x: number;
       y: number;
+      vx: number;
+      vy: number;
       size: number;
-      speed: number;
-      opacity: number;
-      hue: number;
+      alpha: number;
+      gold: boolean;
     }> = [];
 
-    for (let i = 0; i < 30; i++) {
-      shapes.push({
+    for (let i = 0; i < 80; i++) {
+      particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        size: Math.random() * 200 + 50,
-        speed: Math.random() * 0.3 + 0.1,
-        opacity: Math.random() * 0.08 + 0.02,
-        hue: Math.random() > 0.5 ? 250 : 280,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3 - 0.2,
+        size: Math.random() * 2 + 0.5,
+        alpha: Math.random() * 0.5 + 0.1,
+        gold: Math.random() > 0.7,
       });
     }
 
     let animationId: number;
-    let time = 0;
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      time += 0.005;
 
-      shapes.forEach((shape, i) => {
-        shape.y -= shape.speed;
-        if (shape.y + shape.size < 0) {
-          shape.y = canvas.height + shape.size;
-          shape.x = Math.random() * canvas.width;
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.y < -10) {
+          p.y = canvas.height + 10;
+          p.x = Math.random() * canvas.width;
         }
-
-        const gradient = ctx.createRadialGradient(
-          shape.x, shape.y, 0,
-          shape.x, shape.y, shape.size
-        );
-        gradient.addColorStop(0, `hsla(${shape.hue}, 70%, 60%, ${shape.opacity})`);
-        gradient.addColorStop(1, `hsla(${shape.hue}, 70%, 60%, 0)`);
+        if (p.x < -10) p.x = canvas.width + 10;
+        if (p.x > canvas.width + 10) p.x = -10;
 
         ctx.beginPath();
-        ctx.arc(shape.x, shape.y, shape.size, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        if (p.gold) {
+          ctx.fillStyle = `rgba(201, 162, 39, ${p.alpha})`;
+        } else {
+          ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * 0.3})`;
+        }
         ctx.fill();
       });
 
@@ -219,113 +222,225 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: COLORS.bg }}>
-      {/* Ambient Background Canvas */}
+    <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: COLORS.darkBg }}>
+      {/* Particle Canvas Background */}
       <canvas
         ref={canvasRef}
         className="fixed inset-0 pointer-events-none z-0"
-        style={{ opacity: 0.8 }}
+        style={{ opacity: 0.6 }}
       />
 
-      {/* Noise Texture Overlay */}
-      <div className="fixed inset-0 pointer-events-none z-50 opacity-[0.015]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Gradient Mesh Orbs */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      {/* Gradient Overlays */}
+      <div className="fixed inset-0 pointer-events-none z-0">
         <div
-          className="absolute -top-40 -right-40 w-[800px] h-[800px] rounded-full opacity-30 blur-3xl"
-          style={{
-            background: `radial-gradient(circle, ${COLORS.gradientStart} 0%, transparent 70%)`,
-          }}
+          className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-10 blur-3xl"
+          style={{ background: `radial-gradient(circle, ${COLORS.gold} 0%, transparent 70%)` }}
         />
         <div
-          className="absolute top-1/3 -left-40 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl"
-          style={{
-            background: `radial-gradient(circle, ${COLORS.gradientEnd} 0%, transparent 70%)`,
-          }}
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full opacity-10 blur-3xl"
+          style={{ background: `radial-gradient(circle, ${COLORS.goldLight} 0%, transparent 70%)` }}
         />
         <div
-          className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full opacity-15 blur-3xl"
-          style={{
-            background: `radial-gradient(circle, ${COLORS.accent} 0%, transparent 70%)`,
-          }}
+          className="absolute top-1/2 right-0 w-64 h-64 rounded-full opacity-5 blur-3xl"
+          style={{ background: `radial-gradient(circle, ${COLORS.goldBright} 0%, transparent 70%)` }}
         />
       </div>
 
-      {/* Grid Pattern */}
-      <div className="fixed inset-0 pointer-events-none z-0 grid-pattern opacity-50" />
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+        .font-display {
+          font-family: 'Playfair Display', Georgia, serif;
+        }
+        .font-body {
+          font-family: 'Inter', -apple-system, sans-serif;
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(201, 162, 39, 0.3); }
+          50% { box-shadow: 0 0 40px rgba(201, 162, 39, 0.6); }
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+
+        @keyframes rotate-glow {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        @keyframes border-glow {
+          0%, 100% { border-color: rgba(201, 162, 39, 0.3); }
+          50% { border-color: rgba(201, 162, 39, 0.8); }
+        }
+
+        @keyframes sparkle {
+          0%, 100% { opacity: 0; transform: scale(0); }
+          50% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slide-in-right {
+          from {
+            opacity: 0;
+            transform: translateX(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        .animate-fade-in-up {
+          animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .animate-fade-in {
+          animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .animate-delay-100 { animation-delay: 0.1s; opacity: 0; }
+        .animate-delay-200 { animation-delay: 0.2s; opacity: 0; }
+        .animate-delay-300 { animation-delay: 0.3s; opacity: 0; }
+        .animate-delay-400 { animation-delay: 0.4s; opacity: 0; }
+        .animate-delay-500 { animation-delay: 0.5s; opacity: 0; }
+
+        .gold-shimmer {
+          background: linear-gradient(
+            90deg,
+            ${COLORS.goldLight} 0%,
+            ${COLORS.gold} 25%,
+            ${COLORS.goldLight} 50%,
+            ${COLORS.gold} 75%,
+            ${COLORS.goldLight} 100%
+          );
+          background-size: 200% 100%;
+          animation: shimmer 3s infinite linear;
+        }
+
+        .gradient-text {
+          background: linear-gradient(135deg, ${COLORS.goldLight} 0%, ${COLORS.goldBright} 50%, ${COLORS.goldLight} 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .gold-border-glow {
+          animation: border-glow 2s ease-in-out infinite;
+          border: 1px solid rgba(201, 162, 39, 0.3);
+        }
+
+        .hover-lift {
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-lift:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(201, 162, 39, 0.2);
+        }
+
+        .glass-card {
+          background: rgba(10, 10, 16, 0.8);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(201, 162, 39, 0.15);
+        }
+
+        ::-webkit-scrollbar {
+          width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: ${COLORS.darkSurface};
+        }
+        ::-webkit-scrollbar-thumb {
+          background: ${COLORS.goldDark};
+          border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: ${COLORS.gold};
+        }
+      `}</style>
 
       {/* Header */}
       <header
-        className="sticky top-0 z-50 backdrop-blur-xl"
+        className="sticky top-0 z-50 border-b"
         style={{
-          backgroundColor: 'rgba(250, 250, 250, 0.8)',
-          borderBottom: `1px solid ${COLORS.border}`,
+          backgroundColor: 'rgba(5, 5, 8, 0.9)',
+          backdropFilter: 'blur(20px)',
+          borderColor: COLORS.border,
         }}
       >
         <div className="mx-auto max-w-7xl px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {/* Logo */}
               <div
-                className="relative flex h-11 w-11 items-center justify-center rounded-xl overflow-hidden"
+                className="relative flex h-11 w-11 items-center justify-center"
                 style={{
-                  background: `linear-gradient(135deg, ${COLORS.gradientStart} 0%, ${COLORS.gradientEnd} 100%)`,
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                  background: `linear-gradient(135deg, ${COLORS.gold} 0%, ${COLORS.goldDark} 100%)`,
+                  borderRadius: '6px',
                 }}
               >
-                <Sparkles className="h-5 w-5 text-white relative z-10" />
+                <Sparkles className="h-5 w-5 text-white" />
                 <div
-                  className="absolute inset-0 opacity-50"
+                  className="absolute inset-0 rounded-md"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%)',
+                    background: `linear-gradient(135deg, ${COLORS.goldBright} 0%, transparent 50%)`,
+                    opacity: 0.5,
                   }}
                 />
               </div>
               <div>
-                <h1
-                  className="text-xl font-semibold tracking-tight"
-                  style={{
-                    fontFamily: 'var(--font-outfit), sans-serif',
-                    color: COLORS.text,
-                  }}
-                >
+                <h1 className="font-display text-xl font-semibold text-white">
                   ResumeCraft
                 </h1>
-                <p className="text-xs" style={{ color: COLORS.textMuted }}>
-                  AI-Powered Resume Optimizer
-                </p>
+                <p className="text-xs" style={{ color: COLORS.textMuted }}>AI-Powered Resume Optimizer</p>
               </div>
             </div>
 
             <div className="hidden md:flex items-center gap-8">
-              {['功能特点', '使用流程', '关于'].map((item, index) => (
+              {['功能特点', '使用流程', '关于'].map((item) => (
                 <a
                   key={item}
                   href="#"
-                  className="text-sm font-medium transition-all duration-300 hover:opacity-100 relative group"
+                  className="text-sm font-medium transition-all hover:text-white"
                   style={{ color: COLORS.textMuted }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = COLORS.gold}
+                  onMouseLeave={(e) => e.currentTarget.style.color = COLORS.textMuted}
                 >
                   {item}
-                  <span
-                    className="absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full"
-                    style={{ background: `linear-gradient(90deg, ${COLORS.gradientStart}, ${COLORS.gradientEnd})` }}
-                  />
                 </a>
               ))}
-              <button
-                className="relative px-6 py-2.5 rounded-xl text-sm font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              <Button
+                size="sm"
+                className="font-medium"
                 style={{
-                  background: `linear-gradient(135deg, ${COLORS.gradientStart} 0%, ${COLORS.gradientEnd} 100%)`,
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                  backgroundColor: COLORS.gold,
+                  color: COLORS.darkBg,
+                  borderRadius: '4px',
                 }}
               >
-                <span className="relative z-10">立即体验</span>
-              </button>
+                立即体验
+              </Button>
             </div>
           </div>
         </div>
@@ -335,232 +450,158 @@ export default function Home() {
       <section className="relative py-24 md:py-32">
         <div className="mx-auto max-w-7xl px-6 relative z-10">
           <div className="mx-auto max-w-3xl text-center">
-            {/* Floating Badge */}
-            <div className="animate-fade-in-up inline-flex items-center gap-2 px-5 py-2 mb-8 rounded-full border"
-              style={{
-                backgroundColor: 'rgba(102, 126, 234, 0.08)',
-                borderColor: 'rgba(102, 126, 234, 0.2)',
-              }}
-            >
-              <Sparkles className="h-4 w-4" style={{ color: COLORS.primary }} />
-              <span className="text-sm font-medium" style={{ color: COLORS.primary }}>
-                AI 智能优化 · STAR 法则
+            {/* Floating decorative elements */}
+            <div
+              className="absolute top-1/4 left-10 w-2 h-2 rounded-full opacity-60"
+              style={{ backgroundColor: COLORS.gold, animation: 'sparkle 3s infinite' }}
+            />
+            <div
+              className="absolute top-1/3 right-16 w-1 h-1 rounded-full opacity-40"
+              style={{ backgroundColor: COLORS.goldBright, animation: 'sparkle 4s infinite 1s' }}
+            />
+            <div
+              className="absolute bottom-1/3 left-1/4 w-1.5 h-1.5 rounded-full opacity-50"
+              style={{ backgroundColor: COLORS.goldLight, animation: 'sparkle 5s infinite 2s' }}
+            />
+
+            <div className="animate-fade-in-up">
+              <span
+                className="inline-block px-5 py-2 text-xs font-semibold uppercase tracking-widest mb-8"
+                style={{
+                  backgroundColor: `${COLORS.gold}15`,
+                  color: COLORS.gold,
+                  borderRadius: '2px',
+                  border: `1px solid ${COLORS.gold}30`,
+                }}
+              >
+                <Sparkles className="inline h-3 w-3 mr-2" />
+                AI 智能优化
               </span>
             </div>
 
-            {/* Main Headline */}
-            <h2
-              className="animate-fade-in-up animate-delay-100 text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]"
-              style={{
-                fontFamily: 'var(--font-outfit), sans-serif',
-                color: COLORS.text,
-              }}
-            >
+            <h2 className="animate-fade-in-up animate-delay-100 font-display text-5xl md:text-7xl font-bold leading-tight mb-8 text-white">
               让你的简历
               <br />
-              <span
-                className="text-gradient-animated"
-                style={{
-                  background: `linear-gradient(90deg, ${COLORS.gradientStart}, ${COLORS.gradientEnd}, ${COLORS.accent}, ${COLORS.gradientEnd})`,
-                  backgroundSize: '200% auto',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                脱颖而出
-              </span>
+              <span className="gradient-text">脱颖而出</span>
             </h2>
 
-            {/* Subheadline */}
-            <p
-              className="animate-fade-in-up animate-delay-200 text-lg md:text-xl leading-relaxed mb-12 max-w-xl mx-auto"
-              style={{ color: COLORS.textMuted }}
-            >
+            <p className="animate-fade-in-up animate-delay-200 text-lg md:text-xl leading-relaxed mb-10" style={{ color: COLORS.textMuted }}>
               基于 STAR 法则，智能重构你的工作经历，
               <br className="hidden md:block" />
               量化成果数据，提升面试机会率达 3 倍
             </p>
 
-            {/* CTA Buttons */}
             <div className="animate-fade-in-up animate-delay-300 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button
-                onClick={() => document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })}
-                className="group relative px-10 py-4 rounded-2xl text-base font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+              <Button
+                size="lg"
+                className="gap-2 text-base px-10 py-6 font-medium hover-lift"
                 style={{
-                  background: `linear-gradient(135deg, ${COLORS.gradientStart} 0%, ${COLORS.gradientEnd} 100%)`,
-                  boxShadow: '0 10px 40px rgba(102, 126, 234, 0.35)',
+                  backgroundColor: COLORS.gold,
+                  color: COLORS.darkBg,
+                  borderRadius: '4px',
                 }}
+                onClick={() => document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  开始优化
-                  <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-                </span>
-              </button>
-              <button
-                className="group px-10 py-4 rounded-2xl text-base font-semibold border-2 transition-all duration-300 hover:scale-105"
+                开始优化 <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="gap-2 text-base px-10 py-6 font-medium"
                 style={{
-                  borderColor: COLORS.border,
-                  color: COLORS.text,
+                  borderColor: `${COLORS.gold}50`,
+                  color: COLORS.gold,
+                  borderRadius: '4px',
                   backgroundColor: 'transparent',
                 }}
               >
-                <span className="flex items-center gap-2">
-                  <Eye className="h-5 w-5" />
-                  查看示例
-                </span>
-              </button>
+                <Eye className="h-4 w-4" /> 查看示例
+              </Button>
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="animate-fade-in-up animate-delay-400 mt-20 grid grid-cols-3 gap-6 max-w-2xl mx-auto">
+          {/* Stats */}
+          <div className="animate-fade-in-up animate-delay-400 mt-20 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
             {[
-              { value: '3x', label: '面试机会提升', icon: TrendingUp },
-              { value: '10k+', label: '已优化简历', icon: FileText },
-              { value: '98%', label: '用户满意度', icon: Award },
+              { value: '3x', label: '面试机会提升' },
+              { value: '10k+', label: '已优化简历' },
+              { value: '98%', label: '用户满意度' },
             ].map((stat, index) => (
               <div
                 key={index}
-                className="group relative p-6 rounded-2xl bg-white border transition-all duration-500 hover:scale-105 hover:shadow-xl"
-                style={{
-                  borderColor: COLORS.border,
-                  animationDelay: `${index * 100}ms`,
-                }}
+                className="text-center p-6 rounded-lg glass-card hover-lift"
+                style={{ animation: `float ${3 + index * 0.5}s ease-in-out infinite` }}
               >
-                <div
-                  className="absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-                  style={{
-                    background: `linear-gradient(135deg, ${COLORS.gradientStart}10 0%, ${COLORS.gradientEnd}10 100%)`,
-                  }}
-                />
-                <div className="relative z-10">
-                  <stat.icon
-                    className="h-6 w-6 mb-3 transition-colors duration-300"
-                    style={{ color: COLORS.primary }}
-                  />
-                  <p
-                    className="text-3xl md:text-4xl font-bold mb-1"
-                    style={{
-                      fontFamily: 'var(--font-sora), sans-serif',
-                      background: `linear-gradient(135deg, ${COLORS.gradientStart}, ${COLORS.gradientEnd})`,
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                    }}
-                  >
-                    {stat.value}
-                  </p>
-                  <p className="text-sm" style={{ color: COLORS.textMuted }}>
-                    {stat.label}
-                  </p>
-                </div>
+                <p className="font-display text-4xl md:text-5xl font-bold gradient-text mb-2">
+                  {stat.value}
+                </p>
+                <p className="text-sm" style={{ color: COLORS.textMuted }}>
+                  {stat.label}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-20 relative">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `linear-gradient(180deg, transparent 0%, rgba(102, 126, 234, 0.03) 50%, transparent 100%)`,
-          }}
-        />
-        <div className="mx-auto max-w-6xl px-6 relative z-10">
+      {/* Features */}
+      <section id="features" className="py-20 relative" style={{ backgroundColor: COLORS.darkSurface }}>
+        <div className="mx-auto max-w-6xl px-6">
           <div className="text-center mb-16">
-            <span
-              className="inline-block px-4 py-1.5 mb-4 text-xs font-semibold uppercase tracking-widest rounded-full"
-              style={{
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                color: COLORS.primary,
-              }}
-            >
+            <h3 className="font-display text-3xl md:text-4xl font-bold mb-4 text-white">
               为什么选择我们
-            </span>
-            <h3
-              className="text-3xl md:text-4xl font-bold mb-4"
-              style={{
-                fontFamily: 'var(--font-outfit), sans-serif',
-                color: COLORS.text,
-              }}
-            >
-              专业团队打造，让你的简历{' '}
-              <span
-                style={{
-                  background: `linear-gradient(135deg, ${COLORS.gradientStart}, ${COLORS.gradientEnd})`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                更具竞争力
-              </span>
             </h3>
+            <p className="text-lg" style={{ color: COLORS.textMuted }}>
+              专业团队打造，让你的简历更具竞争力
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
-                icon: Zap,
+                icon: <Zap className="h-7 w-7" />,
                 title: 'STAR 法则重构',
                 description: '将模糊的工作描述转化为具体的情境、任务、行动和结果，让经历更具说服力',
-                color: COLORS.gradientStart,
+                color: COLORS.gold,
               },
               {
-                icon: Target,
+                icon: <TrendingUp className="h-7 w-7" />,
                 title: '智能量化分析',
                 description: '自动识别并补充可量化的成果数据，用数字证明你的能力',
-                color: COLORS.gradientEnd,
+                color: '#059669',
               },
               {
-                icon: Wand2,
+                icon: <Crown className="h-7 w-7" />,
                 title: 'JD 关键词匹配',
                 description: '针对目标岗位的 JD 进行优化，确保简历与招聘需求高度匹配',
-                color: COLORS.accent,
+                color: '#9333ea',
               },
             ].map((feature, index) => (
               <Card
                 key={index}
-                className="group relative overflow-hidden border-0 transition-all duration-500 hover:scale-[1.02] hover:shadow-xl"
+                className="group hover-lift glass-card"
                 style={{
-                  backgroundColor: COLORS.surface,
-                  animationDelay: `${index * 100}ms`,
+                  borderRadius: '12px',
+                  animation: `fadeInUp 0.6s ease-out ${index * 0.1}s forwards`,
                 }}
               >
-                <div
-                  className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-                  style={{
-                    background: `linear-gradient(135deg, ${feature.color}08 0%, transparent 100%)`,
-                  }}
-                />
-                <CardContent className="relative z-10 p-8">
+                <CardContent className="p-8">
                   <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-300 group-hover:scale-110"
+                    className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
                     style={{
                       backgroundColor: `${feature.color}15`,
+                      border: `1px solid ${feature.color}30`,
                     }}
                   >
-                    <feature.icon className="h-7 w-7" style={{ color: feature.color }} />
+                    <div style={{ color: feature.color }}>{feature.icon}</div>
                   </div>
-                  <h4
-                    className="text-xl font-semibold mb-3"
-                    style={{
-                      fontFamily: 'var(--font-outfit), sans-serif',
-                      color: COLORS.text,
-                    }}
-                  >
+                  <h4 className="font-display text-xl font-semibold mb-3 text-white">
                     {feature.title}
                   </h4>
                   <p className="text-sm leading-relaxed" style={{ color: COLORS.textMuted }}>
                     {feature.description}
                   </p>
                 </CardContent>
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-1 transition-all duration-500 group-hover:h-2"
-                  style={{
-                    background: `linear-gradient(90deg, ${feature.color}, ${feature.color}80)`,
-                  }}
-                />
               </Card>
             ))}
           </div>
@@ -569,136 +610,77 @@ export default function Home() {
 
       {/* How it works */}
       <section id="how-it-works" className="py-20 relative overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, ${COLORS.gold}30 1px, transparent 0)`,
+            backgroundSize: '60px 60px',
+          }}
+        />
         <div className="mx-auto max-w-6xl px-6 relative z-10">
-          {/* Collapsible Header */}
-          <button
-            onClick={() => setShowHowItWorks(!showHowItWorks)}
-            className="w-full text-center mb-4 group"
-          >
-            <span
-              className="inline-block px-4 py-1.5 mb-4 text-xs font-semibold uppercase tracking-widest rounded-full"
-              style={{
-                backgroundColor: 'rgba(118, 75, 162, 0.1)',
-                color: COLORS.gradientEnd,
-              }}
-            >
+          <div className="text-center mb-16">
+            <h3 className="font-display text-3xl md:text-4xl font-bold mb-4 text-white">
               使用流程
-            </span>
-            <div className="flex items-center justify-center gap-2">
-              <h3
-                className="text-3xl md:text-4xl font-bold"
-                style={{
-                  fontFamily: 'var(--font-outfit), sans-serif',
-                  color: COLORS.text,
-                }}
-              >
-                三步完成简历优化
-              </h3>
-              {showHowItWorks ? (
-                <ChevronUp className="h-6 w-6 transition-transform" style={{ color: COLORS.gradientEnd }} />
-              ) : (
-                <ChevronDown className="h-6 w-6 transition-transform" style={{ color: COLORS.gradientEnd }} />
-              )}
-            </div>
-            {!showHowItWorks && (
-              <p className="text-sm mt-2" style={{ color: COLORS.textMuted }}>
-                点击展开查看
-              </p>
-            )}
-          </button>
+            </h3>
+            <p className="text-lg" style={{ color: COLORS.textMuted }}>
+              三步完成简历优化
+            </p>
+          </div>
 
-          {/* Collapsible Content */}
-          {showHowItWorks && (
-            <div className="grid md:grid-cols-3 gap-8 mt-8">
-              {[
-                { step: '01', title: '上传简历', desc: '支持 PDF 和 Word 格式', gradient: COLORS.gradientStart },
-                { step: '02', title: 'AI 智能分析', desc: '自动识别并优化内容', gradient: COLORS.gradientEnd },
-                { step: '03', title: '下载优化结果', desc: '获取专业级优化简历', gradient: COLORS.accent },
-              ].map((item, index) => (
-                <div
-                  key={index}
-                  className="relative group"
-                  style={{ animationDelay: `${index * 150}ms` }}
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { step: '01', title: '上传简历', desc: '支持 PDF 和 Word 格式' },
+              { step: '02', title: 'AI 智能分析', desc: '自动识别并优化内容' },
+              { step: '03', title: '下载优化结果', desc: '获取专业级优化简历' },
+            ].map((item, index) => (
+              <div
+                key={index}
+                className="text-center p-8 rounded-xl glass-card gold-border-glow"
+                style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.15}s forwards` }}
+              >
+                <p
+                  className="font-display text-6xl font-bold mb-4 gold-shimmer bg-clip-text text-transparent"
+                  style={{ WebkitTextFillColor: 'transparent' }}
                 >
-                  <div
-                    className="absolute inset-0 rounded-3xl blur-xl opacity-20 transition-opacity duration-500 group-hover:opacity-40"
-                    style={{ background: `linear-gradient(135deg, ${item.gradient}, transparent)` }}
-                  />
-                  <div
-                    className="relative p-8 rounded-3xl bg-white border transition-all duration-500 hover:scale-[1.02] hover:shadow-xl"
-                    style={{
-                      borderColor: COLORS.border,
-                    }}
-                  >
-                    <p
-                      className="text-6xl font-bold mb-4 tracking-tight"
-                      style={{
-                        fontFamily: 'var(--font-sora), sans-serif',
-                        background: `linear-gradient(135deg, ${item.gradient}, ${item.gradient}80)`,
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                      }}
-                    >
-                      {item.step}
-                    </p>
-                    <h4
-                      className="text-xl font-semibold mb-2"
-                      style={{
-                        fontFamily: 'var(--font-outfit), sans-serif',
-                        color: COLORS.text,
-                      }}
-                    >
-                      {item.title}
-                    </h4>
-                    <p className="text-sm" style={{ color: COLORS.textMuted }}>
-                      {item.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                  {item.step}
+                </p>
+                <h4 className="font-display text-xl font-semibold mb-2 text-white">
+                  {item.title}
+                </h4>
+                <p style={{ color: COLORS.textMuted }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA */}
       <section className="py-24 relative">
         <div
-          className="absolute inset-0 pointer-events-none overflow-hidden"
-        >
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full opacity-20 blur-3xl"
-            style={{
-              background: `linear-gradient(135deg, ${COLORS.gradientStart}, ${COLORS.gradientEnd})`,
-            }}
-          />
-        </div>
+          className="absolute inset-0 opacity-30"
+          style={{
+            background: `radial-gradient(ellipse at center, ${COLORS.gold}20 0%, transparent 70%)`,
+          }}
+        />
         <div className="mx-auto max-w-4xl px-6 text-center relative z-10">
-          <h3
-            className="text-3xl md:text-4xl font-bold mb-6"
-            style={{
-              fontFamily: 'var(--font-outfit), sans-serif',
-              color: COLORS.text,
-            }}
-          >
+          <h3 className="font-display text-3xl md:text-4xl font-bold mb-6 text-white">
             准备好让你的简历脱颖而出了吗？
           </h3>
           <p className="text-lg mb-10" style={{ color: COLORS.textMuted }}>
             立即开始免费优化，让招聘官眼前一亮
           </p>
-          <button
-            onClick={() => document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })}
-            className="group relative px-14 py-5 rounded-2xl text-base font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+          <Button
+            size="lg"
+            className="gap-2 text-base px-12 py-7 font-semibold hover-lift"
             style={{
-              background: `linear-gradient(135deg, ${COLORS.gradientStart} 0%, ${COLORS.gradientEnd} 100%)`,
-              boxShadow: '0 15px 50px rgba(102, 126, 234, 0.4)',
+              backgroundColor: COLORS.gold,
+              color: COLORS.darkBg,
+              borderRadius: '4px',
             }}
+            onClick={() => document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })}
           >
-            <span className="relative z-10 flex items-center gap-2">
-              立即开始
-              <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-            </span>
-          </button>
+            立即开始 <ArrowRight className="h-5 w-5" />
+          </Button>
         </div>
       </section>
 
@@ -706,22 +688,7 @@ export default function Home() {
       <section id="upload-section" className="py-20 relative z-10">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center mb-12">
-            <span
-              className="inline-block px-4 py-1.5 mb-4 text-xs font-semibold uppercase tracking-widest rounded-full"
-              style={{
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                color: COLORS.primary,
-              }}
-            >
-              开始优化
-            </span>
-            <h3
-              className="text-3xl md:text-4xl font-bold mb-4"
-              style={{
-                fontFamily: 'var(--font-outfit), sans-serif',
-                color: COLORS.text,
-              }}
-            >
+            <h3 className="font-display text-3xl md:text-4xl font-bold mb-4 text-white">
               开始优化你的简历
             </h3>
             <p className="text-lg" style={{ color: COLORS.textMuted }}>
@@ -729,35 +696,26 @@ export default function Home() {
             </p>
           </div>
 
-          {/* 3-Column Layout */}
+          {/* 3-Column Layout for better organization */}
           <div className="grid lg:grid-cols-12 gap-6">
             {/* Left Column - Upload & Job Description */}
             <div className="lg:col-span-4 space-y-6">
               <Card
-                className="overflow-hidden transition-all duration-500 hover:shadow-xl"
-                style={{
-                  backgroundColor: COLORS.surface,
-                  borderColor: COLORS.border,
-                  borderRadius: '1rem',
-                }}
+                className="glass-card hover-lift"
+                style={{ borderRadius: '12px' }}
               >
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      className="w-10 h-10 rounded-lg flex items-center justify-center"
                       style={{
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        backgroundColor: `${COLORS.gold}15`,
+                        border: `1px solid ${COLORS.gold}30`,
                       }}
                     >
-                      <FileText className="h-5 w-5" style={{ color: COLORS.primary }} />
+                      <FileText className="h-5 w-5" style={{ color: COLORS.gold }} />
                     </div>
-                    <CardTitle
-                      className="text-xl"
-                      style={{
-                        fontFamily: 'var(--font-outfit), sans-serif',
-                        color: COLORS.text,
-                      }}
-                    >
+                    <CardTitle className="font-display text-xl text-white">
                       上传简历
                     </CardTitle>
                   </div>
@@ -776,50 +734,40 @@ export default function Home() {
                   {/* Status indicator */}
                   {isOptimizing && (
                     <div
-                      className="flex items-center gap-3 p-4 rounded-xl"
-                      style={{
-                        backgroundColor: 'rgba(102, 126, 234, 0.08)',
-                        border: `1px solid rgba(102, 126, 234, 0.2)`,
-                      }}
+                      className="flex items-center gap-3 p-4 rounded-lg"
+                      style={{ backgroundColor: `${COLORS.gold}10`, border: `1px solid ${COLORS.gold}30` }}
                     >
-                      <div
-                        className="w-2.5 h-2.5 rounded-full animate-pulse"
-                        style={{ background: `linear-gradient(135deg, ${COLORS.gradientStart}, ${COLORS.gradientEnd})` }}
-                      />
-                      <span className="text-sm font-medium" style={{ color: COLORS.text }}>
+                      <div className="w-2.5 h-2.5 rounded-full gold-shimmer" />
+                      <span className="text-sm font-medium text-white">
                         {getStatusLabel()}
                       </span>
-                      <RefreshCw className="h-4 w-4 animate-spin ml-auto" style={{ color: COLORS.primary }} />
+                      <RefreshCw className="h-4 w-4 animate-spin ml-auto" style={{ color: COLORS.gold }} />
                     </div>
                   )}
 
-                  <button
+                  <Button
                     onClick={handleOptimize}
                     disabled={!resumeText.trim() || isOptimizing}
-                    className="w-full relative px-6 py-4 rounded-xl text-base font-semibold text-white overflow-hidden transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
+                    className="w-full gap-2 text-base py-6 font-semibold hover-lift"
                     style={{
-                      background: resumeText.trim() && !isOptimizing
-                        ? `linear-gradient(135deg, ${COLORS.gradientStart}, ${COLORS.gradientEnd})`
-                        : COLORS.textMuted,
-                      boxShadow: resumeText.trim() && !isOptimizing
-                        ? '0 4px 15px rgba(102, 126, 234, 0.3)'
-                        : 'none',
+                      backgroundColor: resumeText.trim() && !isOptimizing ? COLORS.gold : COLORS.darkElevated,
+                      color: resumeText.trim() && !isOptimizing ? COLORS.darkBg : COLORS.textMuted,
+                      borderRadius: '6px',
+                      border: resumeText.trim() && !isOptimizing ? 'none' : `1px solid ${COLORS.border}`,
                     }}
                   >
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                      {isOptimizing ? (
-                        <>正在优化中...</>
-                      ) : (
-                        <>
-                          <Sparkles className="h-5 w-5" />
-                          开始优化简历
-                        </>
-                      )}
-                    </span>
-                  </button>
+                    {isOptimizing ? (
+                      <>正在优化中...</>
+                    ) : (
+                      <>
+                        <Sparkles className="h-5 w-5" />
+                        开始优化简历
+                      </>
+                    )}
+                  </Button>
 
                   {status === 'error' && (
-                    <p className="text-center text-sm" style={{ color: '#DC2626' }}>
+                    <p className="text-center text-sm" style={{ color: '#ef4444' }}>
                       优化失败，请检查 API 配置或重试
                     </p>
                   )}
@@ -827,36 +775,21 @@ export default function Home() {
               </Card>
 
               {/* Tips Card */}
-              <Card
-                className="overflow-hidden transition-all duration-500 hover:shadow-lg"
-                style={{
-                  backgroundColor: COLORS.surface,
-                  borderColor: COLORS.border,
-                  borderRadius: '1rem',
-                }}
-              >
+              <Card className="glass-card" style={{ borderRadius: '12px' }}>
                 <CardContent className="p-6">
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: COLORS.success }} />
+                    <CheckCircle2 className="h-5 w-5 mt-0.5" style={{ color: COLORS.gold }} />
                     <div>
-                      <h4
-                        className="font-semibold mb-3"
-                        style={{
-                          fontFamily: 'var(--font-outfit), sans-serif',
-                          color: COLORS.text,
-                        }}
-                      >
-                        优化建议
-                      </h4>
+                      <h4 className="font-semibold mb-3 text-white">优化建议</h4>
                       <ul className="text-sm space-y-2.5" style={{ color: COLORS.textMuted }}>
                         <li className="flex items-center gap-2">
-                          <span style={{ color: COLORS.primary }}>•</span> 上传 PDF 格式可获得最佳解析效果
+                          <span style={{ color: COLORS.gold }}>•</span> 上传 PDF 格式可获得最佳解析效果
                         </li>
                         <li className="flex items-center gap-2">
-                          <span style={{ color: COLORS.primary }}>•</span> 提供目标岗位 JD 可获得更精准的匹配
+                          <span style={{ color: COLORS.gold }}>•</span> 提供目标岗位 JD 可获得更精准的匹配
                         </li>
                         <li className="flex items-center gap-2">
-                          <span style={{ color: COLORS.primary }}>•</span> STAR 法则让你的经历更具说服力
+                          <span style={{ color: COLORS.gold }}>•</span> STAR 法则让你的经历更具说服力
                         </li>
                       </ul>
                     </div>
@@ -880,34 +813,36 @@ export default function Home() {
                 <>
                   {/* Success Header */}
                   <Card
-                    className="overflow-hidden transition-all duration-500"
+                    className="glass-card hover-lift"
                     style={{
-                      backgroundColor: COLORS.surface,
-                      borderColor: COLORS.border,
-                      borderRadius: '1rem',
+                      borderRadius: '12px',
+                      animation: 'slide-in-right 0.5s ease-out',
                     }}
                   >
                     <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-5">
                         <div
                           className="w-10 h-10 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: 'rgba(5, 150, 105, 0.1)' }}
+                          style={{ backgroundColor: `${COLORS.success}20` }}
                         >
                           <CheckCircle2 className="h-5 w-5" style={{ color: COLORS.success }} />
                         </div>
                         <div>
-                          <span className="font-semibold" style={{ color: COLORS.text }}>优化完成！</span>
+                          <span className="font-semibold text-white">优化完成！</span>
                           <p className="text-xs" style={{ color: COLORS.textMuted }}>AI 已基于 STAR 法则完成优化</p>
                         </div>
                       </div>
 
                       <Button
                         variant="outline"
+                        size="sm"
                         onClick={() => setShowCompare(true)}
-                        className="w-full"
+                        className="w-full gap-2"
                         style={{
-                          borderColor: COLORS.border,
-                          color: COLORS.text,
+                          borderColor: `${COLORS.gold}50`,
+                          color: COLORS.gold,
+                          borderRadius: '4px',
+                          backgroundColor: 'transparent',
                         }}
                       >
                         <Eye className="h-4 w-4" />
@@ -918,51 +853,46 @@ export default function Home() {
 
                   {/* Download Options */}
                   <Card
-                    className="overflow-hidden transition-all duration-500 hover:shadow-xl"
+                    className="glass-card hover-lift"
                     style={{
-                      backgroundColor: COLORS.surface,
-                      borderColor: COLORS.border,
-                      borderRadius: '1rem',
+                      borderRadius: '12px',
+                      animation: 'slide-in-right 0.5s ease-out 0.1s both',
                     }}
                   >
                     <CardContent className="p-6">
-                      <h4
-                        className="font-semibold mb-4 flex items-center gap-2"
-                        style={{
-                          fontFamily: 'var(--font-outfit), sans-serif',
-                          color: COLORS.text,
-                        }}
-                      >
-                        <Download className="h-4 w-4" style={{ color: COLORS.primary }} />
+                      <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
+                        <Download className="h-4 w-4" style={{ color: COLORS.gold }} />
                         下载优化结果
                       </h4>
                       <DownloadOptions resume={optimizedResume} />
                     </CardContent>
                   </Card>
 
-                  {/* Tabbed Section */}
+                  {/* Tabbed Section - Cover Letter & Interview Questions */}
                   <Card
-                    className="overflow-hidden transition-all duration-500"
+                    className="glass-card"
                     style={{
-                      backgroundColor: COLORS.surface,
-                      borderColor: COLORS.border,
-                      borderRadius: '1rem',
+                      borderRadius: '12px',
+                      animation: 'slide-in-right 0.5s ease-out 0.2s both',
                     }}
                   >
                     {/* Tab Header */}
-                    <div className="flex border-b" style={{ borderColor: COLORS.border }}>
+                    <div
+                      className="flex border-b"
+                      style={{ borderColor: COLORS.border }}
+                    >
                       <button
                         onClick={() => setActiveTab('cover')}
                         className="flex-1 px-4 py-3 text-sm font-medium transition-all relative"
                         style={{
-                          color: activeTab === 'cover' ? COLORS.primary : COLORS.textMuted,
+                          color: activeTab === 'cover' ? COLORS.gold : COLORS.textMuted,
                         }}
                       >
                         求职信
                         {activeTab === 'cover' && (
                           <div
                             className="absolute bottom-0 left-0 right-0 h-0.5"
-                            style={{ background: `linear-gradient(90deg, ${COLORS.gradientStart}, ${COLORS.gradientEnd})` }}
+                            style={{ backgroundColor: COLORS.gold }}
                           />
                         )}
                       </button>
@@ -970,14 +900,14 @@ export default function Home() {
                         onClick={() => setActiveTab('interview')}
                         className="flex-1 px-4 py-3 text-sm font-medium transition-all relative"
                         style={{
-                          color: activeTab === 'interview' ? COLORS.primary : COLORS.textMuted,
+                          color: activeTab === 'interview' ? COLORS.gold : COLORS.textMuted,
                         }}
                       >
                         面试问题
                         {activeTab === 'interview' && (
                           <div
                             className="absolute bottom-0 left-0 right-0 h-0.5"
-                            style={{ background: `linear-gradient(90deg, ${COLORS.gradientStart}, ${COLORS.gradientEnd})` }}
+                            style={{ backgroundColor: COLORS.gold }}
                           />
                         )}
                       </button>
@@ -1000,32 +930,19 @@ export default function Home() {
                   </Card>
                 </>
               ) : (
-                /* Empty State */
+                /* Empty State for Results Column */
                 <Card
-                  className="h-full min-h-96 flex items-center justify-center transition-all duration-500"
-                  style={{
-                    backgroundColor: COLORS.surface,
-                    borderColor: COLORS.border,
-                    borderRadius: '1rem',
-                    border: `2px dashed ${COLORS.border}`,
-                  }}
+                  className="glass-card h-full min-h-96 flex items-center justify-center"
+                  style={{ borderRadius: '12px', border: `1px dashed ${COLORS.border}` }}
                 >
                   <CardContent className="text-center py-12">
                     <div
-                      className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-                      style={{ backgroundColor: 'rgba(102, 126, 234, 0.1)' }}
+                      className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                      style={{ backgroundColor: `${COLORS.gold}10` }}
                     >
-                      <Star className="h-8 w-8" style={{ color: COLORS.primary }} />
+                      <Gem className="h-8 w-8" style={{ color: COLORS.gold }} />
                     </div>
-                    <h4
-                      className="font-semibold mb-2"
-                      style={{
-                        fontFamily: 'var(--font-outfit), sans-serif',
-                        color: COLORS.text,
-                      }}
-                    >
-                      等待优化结果
-                    </h4>
+                    <h4 className="font-semibold text-white mb-2">等待优化结果</h4>
                     <p className="text-sm" style={{ color: COLORS.textMuted }}>
                       上传简历并点击开始优化后
                       <br />
@@ -1049,31 +966,20 @@ export default function Home() {
       )}
 
       {/* Footer */}
-      <footer
-        className="py-10 border-t"
-        style={{
-          backgroundColor: COLORS.surface,
-          borderColor: COLORS.border,
-        }}
-      >
+      <footer className="py-10 border-t" style={{ backgroundColor: COLORS.darkSurface, borderColor: COLORS.border }}>
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div
-                className="relative flex h-8 w-8 items-center justify-center rounded-lg overflow-hidden"
+                className="flex h-8 w-8 items-center justify-center"
                 style={{
-                  background: `linear-gradient(135deg, ${COLORS.gradientStart}, ${COLORS.gradientEnd})`,
+                  background: `linear-gradient(135deg, ${COLORS.gold} 0%, ${COLORS.goldDark} 100%)`,
+                  borderRadius: '4px',
                 }}
               >
-                <Sparkles className="h-4 w-4 text-white relative z-10" />
+                <Sparkles className="h-4 w-4 text-white" />
               </div>
-              <span
-                className="text-lg font-semibold"
-                style={{
-                  fontFamily: 'var(--font-outfit), sans-serif',
-                  color: COLORS.text,
-                }}
-              >
+              <span className="font-display text-lg font-semibold text-white">
                 ResumeCraft
               </span>
             </div>
@@ -1083,67 +989,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-
-      {/* Global Styles */}
-      <style jsx global>{`
-        .text-gradient-animated {
-          background-size: 200% auto;
-          animation: shimmer 3s linear infinite;
-        }
-
-        @keyframes shimmer {
-          0% { background-position: 0% center; }
-          100% { background-position: 200% center; }
-        }
-
-        .grid-pattern {
-          background-image:
-            linear-gradient(rgba(102, 126, 234, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(102, 126, 234, 0.03) 1px, transparent 1px);
-          background-size: 60px 60px;
-        }
-
-        .animate-fade-in-up {
-          animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-          opacity: 0;
-        }
-
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-delay-100 { animation-delay: 0.1s; }
-        .animate-delay-200 { animation-delay: 0.2s; }
-        .animate-delay-300 { animation-delay: 0.3s; }
-        .animate-delay-400 { animation-delay: 0.4s; }
-        .animate-delay-500 { animation-delay: 0.5s; }
-        .animate-delay-600 { animation-delay: 0.6s; }
-
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-15px); }
-        }
-
-        .animate-pulse-soft {
-          animation: pulseSoft 3s ease-in-out infinite;
-        }
-
-        @keyframes pulseSoft {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.7; }
-        }
-      `}</style>
     </div>
   );
 }

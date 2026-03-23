@@ -6,18 +6,26 @@ import {
   Text,
   View,
   StyleSheet,
+  Font,
 } from '@react-pdf/renderer';
 import type { OptimizedResume } from '@/types/resume';
 import type { TemplateType } from '@/lib/templates';
 
-// Use built-in Helvetica font for PDF
-// Note: For production, consider using a bundled Chinese font
+// Noto Sans SC font files for Chinese character support (served from public/fonts)
+// Using URL-based registration to avoid webpack/turbopack module resolution issues
+Font.register({
+  family: 'Noto Sans SC',
+  fonts: [
+    { src: '/fonts/NotoSansSC-Regular.woff', fontWeight: 400 },
+    { src: '/fonts/NotoSansSC-Bold.woff', fontWeight: 700 },
+  ],
+});
 
 // Simple styles - using standard fonts that work better
 const simpleStyles = StyleSheet.create({
   page: {
     padding: 40,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Noto Sans SC',
     fontSize: 10,
     lineHeight: 1.5,
     color: '#1a1f2e',
@@ -116,7 +124,7 @@ const simpleStyles = StyleSheet.create({
 const professionalStyles = StyleSheet.create({
   page: {
     padding: 50,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Noto Sans SC',
     fontSize: 10,
     lineHeight: 1.5,
     color: '#0f172a',
@@ -223,7 +231,7 @@ const professionalStyles = StyleSheet.create({
 const creativeStyles = StyleSheet.create({
   page: {
     padding: 40,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Noto Sans SC',
     fontSize: 10,
     lineHeight: 1.5,
     color: '#1e1b4b',
