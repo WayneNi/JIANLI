@@ -13,7 +13,7 @@ import { DownloadOptions } from '@/components/resume/DownloadOptions';
 import { CompareView } from '@/components/resume/CompareView';
 import { CoverLetterGenerator } from '@/components/resume/CoverLetter';
 import { InterviewQuestionsGenerator } from '@/components/resume/InterviewQuestions';
-import { Sparkles, FileText, Eye, ArrowLeft, Coins, Crown } from 'lucide-react';
+import { Sparkles, FileText, Eye, ArrowLeft, Coins, Crown, AlertCircle } from 'lucide-react';
 import type { OptimizeStatus, StreamChunk, OptimizedResume } from '@/types/resume';
 
 interface OptimizeClientProps {
@@ -34,6 +34,7 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
   const [activeTab, setActiveTab] = useState<'cover' | 'interview'>('cover');
   const [credits, setCredits] = useState(initialCredits);
   const [showCreditError, setShowCreditError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFileSelect = useCallback((file: File, text: string) => {
     setResumeText(text);
@@ -103,10 +104,14 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
               }
 
               if (parsed.type === 'error') {
+                const errMsg = parsed.message || '优化过程出现错误';
                 if (parsed.message?.includes('积分不足')) {
                   setShowCreditError(true);
                 }
-                throw new Error(parsed.message || 'Unknown error');
+                setErrorMessage(errMsg);
+                setStatus('error');
+                setIsOptimizing(false);
+                return; // Stop processing
               }
             } catch {
               // Skip invalid JSON
@@ -116,6 +121,8 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
       }
     } catch (error) {
       console.error('Optimization error:', error);
+      const errMsg = error instanceof Error ? error.message : '网络错误，请检查连接后重试';
+      setErrorMessage(errMsg);
       setStatus('error');
     } finally {
       setIsOptimizing(false);
@@ -191,6 +198,30 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
                 立即充值
               </Button>
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Error Banner */}
+      {errorMessage && !showCreditError && (
+        <div className="bg-red-50 border-b border-red-200 px-4 py-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2 text-red-700">
+              <AlertCircle className="w-5 h-5" />
+              <span className="font-medium">优化失败</span>
+              <span className="text-red-600 text-sm">{errorMessage}</span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setErrorMessage(null);
+                handleOptimize();
+              }}
+              className="border-red-300 text-red-700 hover:bg-red-100"
+            >
+              重试
+            </Button>
           </div>
         </div>
       )}

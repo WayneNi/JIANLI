@@ -3,16 +3,49 @@
 import type { OptimizedResume, ResumeSuggestion } from '@/types/resume';
 
 /**
+ * Preprocess raw response to extract JSON
+ * Handles cases where model returns mixed content with markdown or explanatory text
+ */
+function preprocessJSONInput(rawText: string): string {
+  let text = rawText.trim();
+
+  // Strategy 1: Extract from ```json ... ``` blocks
+  const jsonBlockMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  if (jsonBlockMatch && jsonBlockMatch[1]) {
+    return jsonBlockMatch[1].trim();
+  }
+
+  // Strategy 2: Extract from ``` ... ``` blocks (without json marker)
+  const codeBlockMatch = text.match(/```\s*([\s\S]*?)\s*```/);
+  if (codeBlockMatch && codeBlockMatch[1]) {
+    const candidate = codeBlockMatch[1].trim();
+    // Check if it looks like JSON
+    if (candidate.startsWith('{') || candidate.startsWith('[')) {
+      return candidate;
+    }
+  }
+
+  // Strategy 3: Find first '{' and extract from there
+  const firstBrace = text.indexOf('{');
+  if (firstBrace !== -1) {
+    return text.slice(firstBrace);
+  }
+
+  // Strategy 4: Find first '[' and extract from there (for array responses)
+  const firstBracket = text.indexOf('[');
+  if (firstBracket !== -1) {
+    return text.slice(firstBracket);
+  }
+
+  return text;
+}
+
+/**
  * Parse raw AI response to resume object
  */
 export function parseSuggestionResponse(rawJson: string): ResumeSuggestion {
   try {
-    let jsonStr = rawJson.trim();
-
-    // Remove all markdown code blocks
-    jsonStr = jsonStr.replace(/```json\n?/g, '');
-    jsonStr = jsonStr.replace(/```\n?/g, '');
-    jsonStr = jsonStr.replace(/`+/g, '');
+    let jsonStr = preprocessJSONInput(rawJson);
 
     let parsed = null;
     let parseError = null;
@@ -109,13 +142,7 @@ export function parseSuggestionResponse(rawJson: string): ResumeSuggestion {
  * Handles truncated responses by trying multiple strategies
  */
 export function parseAIResponse(rawJson: string): OptimizedResume {
-  let jsonStr = rawJson.trim();
-
-  // Remove all markdown code blocks (including malformed ones like }````json)
-  jsonStr = jsonStr.replace(/```json\n?/g, '');
-  jsonStr = jsonStr.replace(/```\n?/g, '');
-  // Also handle cases where backticks are missing separation
-  jsonStr = jsonStr.replace(/`+/g, '');
+  let jsonStr = preprocessJSONInput(rawJson);
 
   let parsed: {
     summary?: unknown;
@@ -232,19 +259,29 @@ export function parseAIResponse(rawJson: string): OptimizedResume {
   }
 
   // Validate and sanitize
+  const typedParsed = parsed as {
+    summary?: unknown;
+    experience?: unknown;
+    skills?: {
+      technical?: unknown;
+      soft?: unknown;
+      languages?: unknown;
+    };
+    education?: unknown;
+  };
   return {
-    summary: parsed.summary || '',
-    experience: Array.isArray(parsed.experience) ? parsed.experience : [],
+    summary: (typedParsed.summary as string) || '',
+    experience: Array.isArray(typedParsed.experience) ? typedParsed.experience : [],
     skills: {
-      technical: Array.isArray(parsed.skills?.technical)
-        ? parsed.skills.technical
+      technical: Array.isArray(typedParsed.skills?.technical)
+        ? typedParsed.skills.technical
         : [],
-      soft: Array.isArray(parsed.skills?.soft) ? parsed.skills.soft : [],
-      languages: Array.isArray(parsed.skills?.languages)
-        ? parsed.skills.languages
+      soft: Array.isArray(typedParsed.skills?.soft) ? typedParsed.skills.soft : [],
+      languages: Array.isArray(typedParsed.skills?.languages)
+        ? typedParsed.skills.languages
         : [],
     },
-    education: Array.isArray(parsed.education) ? parsed.education : [],
+    education: Array.isArray(typedParsed.education) ? typedParsed.education : [],
   };
 }
 

@@ -49,59 +49,109 @@ function setCachedResult(resumeText: string, jobDescription: string, result: { o
   cache.set(key, { result, timestamp: Date.now() });
 }
 
+const FETCH_TIMEOUT_MS = 30000; // 30 seconds
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit & { timeoutMs?: number } = {}
+): Promise<Response> {
+  const { timeoutMs = FETCH_TIMEOUT_MS, ...fetchOptions } = options;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...fetchOptions,
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    return response;
+  } catch (error) {
+    clearTimeout(timeout);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`请求超时（${timeoutMs / 1000}秒），请检查网络连接后重试`);
+    }
+    throw error;
+  }
+}
+
 async function callMiniMaxAPI(
   prompt: string,
   systemPrompt: string = SYSTEM_PROMPT,
   stream: boolean = true,
-  maxTokens: number = 8192
-) {
+  maxTokens: number = 8192,
+  retries: number = 3
+): Promise<Response> {
   const apiKey = process.env.MINIMAX_API_KEY;
 
   if (!apiKey) {
     throw new Error('MINIMAX_API_KEY is not configured');
   }
 
-  // Using MiniMax's chat completion API
-  const response = await fetch(`${MINIMAX_API_URL}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'abab5.5s-chat',
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: maxTokens,
-      stream: stream,
-    }),
-  });
+  let lastError = new Error('Unknown error');
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    let errorMsg = errorText;
+  for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const errorJson = JSON.parse(errorText);
-      if (errorJson.base_resp?.status_msg) {
-        errorMsg = errorJson.base_resp.status_msg;
-        if (errorMsg === 'insufficient balance') {
-          errorMsg = 'API 余额不足，请充值后再试';
-        }
+      console.log(`[MiniMax] API attempt ${attempt}/${retries}`);
+
+      // Using MiniMax's chat completion API
+      const response = await fetchWithTimeout(`${MINIMAX_API_URL}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'MiniMax-M2.7',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt,
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: maxTokens,
+          stream: stream,
+          group_id: process.env.MINIMAX_GROUP_ID,
+        }),
+        timeoutMs: FETCH_TIMEOUT_MS,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMsg = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.base_resp?.status_msg) {
+            errorMsg = errorJson.base_resp.status_msg;
+            if (errorMsg === 'insufficient balance') {
+              errorMsg = 'API 余额不足，请充值后再试';
+            }
+          }
+        } catch {}
+        throw new Error(`MiniMax API error: ${response.status} - ${errorMsg}`);
       }
-    } catch {}
-    throw new Error(`MiniMax API error: ${response.status} - ${errorMsg}`);
+
+      console.log(`[MiniMax] API attempt ${attempt} succeeded`);
+      return response;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.error(`[MiniMax] Attempt ${attempt} failed:`, lastError.message);
+
+      if (attempt < retries) {
+        const backoffMs = 1000 * attempt; // 1s, 2s, 3s
+        console.log(`[MiniMax] Retrying in ${backoffMs}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      }
+    }
   }
 
-  return response;
+  throw lastError;
 }
 
 async function* streamAIResponse(response: Response): AsyncGenerator<string> {
@@ -111,10 +161,17 @@ async function* streamAIResponse(response: Response): AsyncGenerator<string> {
   }
 
   const decoder = new TextDecoder();
+  let chunkCount = 0;
+  let totalContentLength = 0;
+
+  console.log('[MiniMax] Stream started');
 
   while (true) {
     const { done, value } = await reader.read();
-    if (done) break;
+    if (done) {
+      console.log(`[MiniMax] Stream completed. Total chunks: ${chunkCount}, Total content length: ${totalContentLength}`);
+      break;
+    }
 
     const chunk = decoder.decode(value);
     const lines = chunk.split('\n');
@@ -122,36 +179,47 @@ async function* streamAIResponse(response: Response): AsyncGenerator<string> {
     for (const line of lines) {
       if (line.startsWith('data: ')) {
         const data = line.slice(6);
-        if (data === '[DONE]') continue;
+        if (data === '[DONE]') {
+          console.log('[MiniMax] Received [DONE] signal');
+          continue;
+        }
 
         try {
           const parsed = JSON.parse(data);
-          // Debug logging for troubleshooting MiniMax API responses
-          console.log('[MiniMax] Raw response keys:', Object.keys(parsed));
-          if (parsed.choices && parsed.choices[0]) {
-            const choice = parsed.choices[0];
-            console.log('[MiniMax] Choice keys:', Object.keys(choice));
-            // Log all potential content fields
-            console.log('[MiniMax] delta:', JSON.stringify(choice.delta)?.substring(0, 200));
-            console.log('[MiniMax] message.content:', choice.message?.content?.substring(0, 200));
-            console.log('[MiniMax] text:', choice.text?.substring(0, 200));
-            console.log('[MiniMax] content:', choice.content?.substring(0, 200));
-            console.log('[MiniMax] parsed.text:', parsed.text?.substring(0, 200));
-          }
+          chunkCount++;
+
           // Enhanced content extraction - check all possible fields
+          // MiniMax streaming uses choices[0].delta.content
           const choice = parsed.choices?.[0];
-          const content =
-            choice?.delta?.content ||
-            choice?.message?.content ||
-            choice?.text ||
-            choice?.content ||
-            parsed.text ||
-            '';
-          if (content) {
-            console.log('[MiniMax] Yielding content, length:', content.length);
+          let content = '';
+
+          if (choice) {
+            // Try all possible field names
+            content =
+              choice?.delta?.content ||
+              choice?.message?.content ||
+              choice?.text ||
+              choice?.content ||
+              '';
           }
+
+          // Also check top-level fields
+          if (!content) {
+            content = parsed.text || parsed.content || '';
+          }
+
           if (content) {
+            totalContentLength += content.length;
+
+            // Log every 20th chunk to avoid log spam but still provide visibility
+            if (chunkCount % 20 === 1) {
+              console.log(`[MiniMax] Chunk ${chunkCount}: "${content.substring(0, 100)}${content.length > 100 ? '...' : ''}"`);
+            }
+
             yield content;
+          } else if (chunkCount <= 3) {
+            // Log first few chunks for debugging if no content found
+            console.log(`[MiniMax] Chunk ${chunkCount} - no content extracted. Keys:`, Object.keys(parsed), 'Choice keys:', choice ? Object.keys(choice) : 'N/A');
           }
         } catch (e) {
           console.error('[MiniMax] Parse error:', e, 'Raw data:', data.substring(0, 200));
