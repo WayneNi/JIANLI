@@ -1,105 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/auth.config'
-import { stripe, isStripeEnabled } from '@/lib/stripe'
-import { CREDIT_PACKAGES, LIFETIME_PACKAGE, getPackage, MOCK_MODE } from '@/lib/stripe-products'
-import prisma from '@/lib/db'
+import { isVnativeEnabled } from '@/lib/vnative'
 
-// Create Stripe Checkout Session for payment
+// 重定向到 Vnative 创建订单
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: '请先登录' }, { status: 401 })
     }
 
+    if (!isVnativeEnabled()) {
+      return NextResponse.json({ error: '支付系统未配置' }, { status: 500 })
+    }
+
     const body = await req.json()
-    const { packageId } = body
+    const { packageId, payType = 'alipay' } = body
 
     if (!packageId) {
       return NextResponse.json({ error: 'packageId is required' }, { status: 400 })
     }
 
-    const pkg = getPackage(packageId)
-    if (!pkg) {
-      return NextResponse.json({ error: 'Invalid package' }, { status: 400 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { email: true, name: true },
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: '用户不存在' }, { status: 404 })
-    }
-
-    // Mock mode - return a fake checkout URL for testing
-    if (MOCK_MODE) {
-      const mockCheckoutUrl = `/mock-checkout?package=${packageId}&userId=${session.user.id}`
-
-      // Create a pending payment record
-      await prisma.payment.create({
-        data: {
-          userId: session.user.id,
-          type: packageId === 'lifetime' ? 'LIFETIME' : 'CREDIT',
-          amount: pkg.price,
-          credits: 'credits' in pkg ? pkg.credits + pkg.bonus : null,
-          stripePaymentId: `mock_${Date.now()}`,
-          status: 'PENDING',
+    // 调用 Vnative 创建订单 API
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/payments/vnative/create-order`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      })
+        body: JSON.stringify({ packageId, payType }),
+      }
+    )
 
-      return NextResponse.json({ url: mockCheckoutUrl, mock: true })
+    const data = await response.json()
+
+    if (!response.ok) {
+      return NextResponse.json({ error: data.error || '创建订单失败' }, { status: response.status })
     }
 
-    if (!isStripeEnabled || !stripe) {
-      return NextResponse.json({ error: 'Stripe is not configured' }, { status: 500 })
-    }
-
-    // Create Stripe Checkout Session
-    const checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'cny',
-            product_data: {
-              name: pkg.name,
-              description:
-                'credits' in pkg
-                  ? `${pkg.credits} 积分${pkg.bonus > 0 ? `（另送 ${pkg.bonus} 积分）` : ''}`
-                  : '终身解锁全部功能',
-            },
-            unit_amount: pkg.price,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard?payment=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/pricing?payment=cancelled`,
-      customer_email: user.email,
-      metadata: {
-        userId: session.user.id,
-        packageId,
-      },
+    // 返回给前端，包含二维码URL
+    return NextResponse.json({
+      orderId: data.orderId,
+      vnativeOrderId: data.vnativeOrderId,
+      qrcodeUrl: data.qrcodeUrl,
+      qrcodeContent: data.qrcodeContent,
+      expireTime: data.expireTime,
     })
-
-    // Create a pending payment record
-    await prisma.payment.create({
-      data: {
-        userId: session.user.id,
-        type: packageId === 'lifetime' ? 'LIFETIME' : 'CREDIT',
-        amount: pkg.price,
-        credits: 'credits' in pkg ? pkg.credits + pkg.bonus : null,
-        stripePaymentId: checkoutSession.id,
-        status: 'PENDING',
-      },
-    })
-
-    return NextResponse.json({ url: checkoutSession.url })
   } catch (error) {
     console.error('Checkout error:', error)
     return NextResponse.json(
