@@ -177,6 +177,7 @@ model Payment {
   amount          Int          // 充值金额（分）
   credits         Int?         // 充值积分（仅 CREDIT）
   stripePaymentId String?
+  vnativeOrderId  String?
   status          PaymentStatus @default(PENDING)
   createdAt       DateTime @default(now())
 
