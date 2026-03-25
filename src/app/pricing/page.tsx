@@ -199,7 +199,7 @@ export default async function PricingPage() {
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-2">如何充值积分？</h3>
               <p className="text-sm text-gray-600">
-                登录后选择积分充值套餐，通过 Stripe 安全支付即可。支付成功后积分即时到账。
+                登录后选择积分充值套餐，通过微信或支付宝安全支付即可。支付成功后积分即时到账。
               </p>
             </div>
           </div>
