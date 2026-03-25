@@ -27,9 +27,12 @@ interface PricingCardProps {
 
 export function PricingCard({ pkg, type, isAuthenticated }: PricingCardProps) {
   const [loading, setLoading] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
+  const [orderId, setOrderId] = useState<string | null>(null)
+  const [expireTime, setExpireTime] = useState<string | null>(null)
   const router = useRouter()
 
-  const handlePurchase = async () => {
+  const handlePurchase = async (payType: 'wechat' | 'alipay' = 'alipay') => {
     if (!isAuthenticated) {
       router.push('/auth/signin?callbackUrl=/pricing')
       return
@@ -40,18 +43,15 @@ export function PricingCard({ pkg, type, isAuthenticated }: PricingCardProps) {
       const res = await fetch('/api/payments/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id }),
+        body: JSON.stringify({ packageId: pkg.id, payType }),
       })
 
       const data = await res.json()
 
-      if (data.url) {
-        if (data.mock) {
-          // Mock mode - redirect to mock checkout
-          router.push(data.url)
-        } else {
-          window.location.href = data.url
-        }
+      if (data.qrcodeUrl) {
+        setQrCodeUrl(data.qrcodeUrl)
+        setOrderId(data.orderId)
+        setExpireTime(data.expireTime)
       } else {
         alert('创建订单失败，请重试')
       }
@@ -61,6 +61,12 @@ export function PricingCard({ pkg, type, isAuthenticated }: PricingCardProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const closeQRModal = () => {
+    setQrCodeUrl(null)
+    setOrderId(null)
+    setExpireTime(null)
   }
 
   const formatPrice = (cents: number) => {
@@ -107,18 +113,48 @@ export function PricingCard({ pkg, type, isAuthenticated }: PricingCardProps) {
         </ul>
       )}
 
-      <Button
-        onClick={handlePurchase}
-        disabled={loading}
-        className={`w-full ${
-          pkg.highlight
-            ? 'bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-700 hover:to-pink-700 text-white'
-            : ''
-        }`}
-        variant={pkg.highlight ? 'default' : 'outline'}
-      >
-        {loading ? '处理中...' : type === 'lifetime' ? '立即购买' : '充值'}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          onClick={() => handlePurchase('alipay')}
+          disabled={loading}
+          className={`w-full ${pkg.highlight ? 'bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-700 hover:to-pink-700 text-white' : ''}`}
+          variant={pkg.highlight ? 'default' : 'outline'}
+        >
+          {loading ? '处理中...' : '支付宝支付'}
+        </Button>
+
+        <Button
+          onClick={() => handlePurchase('wechat')}
+          disabled={loading}
+          className="w-full"
+          variant="outline"
+        >
+          {loading ? '处理中...' : '微信支付'}
+        </Button>
+      </div>
+
+      {/* QR Code Modal */}
+      {qrCodeUrl && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+              请扫码支付
+            </h3>
+            <div className="flex justify-center mb-4">
+              <img src={qrCodeUrl} alt="支付二维码" className="w-64 h-64" />
+            </div>
+            <p className="text-sm text-gray-500 text-center mb-4">
+              支付完成后点击下方按钮确认
+            </p>
+            <Button onClick={closeQRModal} className="w-full" variant="outline">
+              我已支付
+            </Button>
+            <p className="text-xs text-gray-400 text-center mt-2">
+              订单号: {orderId}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
