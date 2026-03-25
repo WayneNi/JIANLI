@@ -11,7 +11,7 @@ export const STATUS_MESSAGES: Record<string, string> = {
   completed: '优化完成！',
 };
 
-// Prompt for generating JD-based improvement suggestions (compressed)
+// Prompt for generating JD-based improvement suggestions
 export const SUGGESTION_PROMPT = (resumeText: string, jobDescription: string) => `
 ## 简历
 ${resumeText}
@@ -19,8 +19,21 @@ ${resumeText}
 ## JD
 ${jobDescription}
 
-分析简历与JD的匹配度，返回JSON：
-{"matchScore":75,"gapAnalysis":"...","skillGaps":[],"experienceSuggestions":[],"actionPlan":[]}`;
+请分析简历与JD的匹配度，并为每段工作经历生成改善建议。
+
+**重要：必须严格按照以下 JSON 格式返回，确保生成多样化建议：**
+{
+  "matchScore": 75,
+  "gapAnalysis": "匹配度分析...",
+  "skillGaps": ["缺失技能1", "缺失技能2"],
+  "experienceSuggestions": [
+    {"type": "add", "suggestion": "建议新增...（针对某段经历）"},
+    {"type": "emphasize", "suggestion": "建议强化...（针对某段经历）"},
+    {"type": "remove", "suggestion": "建议弱化/删除...（针对某段经历）"}
+  ],
+  "actionPlan": ["具体行动步骤1", "具体行动步骤2"]
+}
+**注意**：experienceSuggestions 数组必须同时包含 add、emphasize、remove 三种类型的建议，每种至少 1-2 条。不要只返回 remove 类型的建议。`;
 
 export const OPTIMIZE_PROMPT = (resumeText: string, jobDescription?: string) => `
 ## 简历内容

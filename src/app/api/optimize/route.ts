@@ -114,9 +114,10 @@ async function callMiniMaxAPI(
               content: prompt,
             },
           ],
-          temperature: 0.7,
+          temperature: 0.3,
           max_tokens: maxTokens,
           stream: stream,
+          response_format: { type: "json_object" },
           group_id: process.env.MINIMAX_GROUP_ID,
         }),
         timeoutMs: FETCH_TIMEOUT_MS,
@@ -364,13 +365,13 @@ export async function POST(req: NextRequest) {
             const atsCheckPromise = Promise.resolve().then(() => analyzeResumeATS(resumeText, jobDescription));
 
             // Parallel API calls - both suggestion and optimization run concurrently
-            // Use smaller max_tokens for suggestion (faster response)
+            // Increased max_tokens for suggestion to allow more detailed suggestions
             const [suggestionResponse, optimizeResponse] = await Promise.all([
               callMiniMaxAPI(
                 suggestionPrompt,
-                '你是一位专业的简历优化顾问，擅长分析简历与目标岗位的匹配度，并给出具体的改善建议。请严格按照JSON格式输出。',
+                '你是一位专业的简历优化顾问，擅长分析简历与目标岗位的匹配度，并给出具体的改善建议。请严格按照JSON格式输出，必须包含 add、emphasize、remove 三种类型的建议，每种至少 1-2 条。',
                 true,
-                2048 // Smaller for faster suggestion response
+                4096 // Increased for more detailed suggestions
               ),
               callMiniMaxAPI(optimizePrompt, SYSTEM_PROMPT, true, 8192),
             ]);
