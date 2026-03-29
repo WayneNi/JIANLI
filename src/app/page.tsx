@@ -76,7 +76,7 @@ export default async function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative py-20 md:py-28 overflow-hidden">
+      <section className="relative py-24 md:py-36 overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-white to-pink-50" />
         <div className="absolute top-20 right-0 w-96 h-96 bg-gradient-to-br from-violet-200 to-pink-200 rounded-full blur-3xl opacity-30" />
@@ -149,7 +149,7 @@ export default async function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 bg-white border-y border-gray-100">
+      <section className="py-8 md:py-10 bg-white border-y border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
             {[
@@ -169,7 +169,7 @@ export default async function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 md:py-28">
+      <section id="features" className="py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -180,7 +180,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 items-start">
             {[
               {
                 icon: <Target className="w-6 h-6" />,
@@ -223,7 +223,7 @@ export default async function HomePage() {
       </section>
 
       {/* How it Works */}
-      <section id="how-it-works" className="py-20 md:py-28 bg-gradient-to-br from-violet-50 to-pink-50">
+      <section id="how-it-works" className="py-16 md:py-24 bg-gradient-to-br from-violet-50 to-pink-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -234,7 +234,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 items-start">
             {[
               {
                 step: '01',
@@ -267,7 +267,7 @@ export default async function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 md:py-28">
+      <section className="py-12 md:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="bg-gradient-to-br from-violet-600 to-pink-600 rounded-3xl p-12 md:p-16 text-white relative overflow-hidden">
             {/* Decoration */}
