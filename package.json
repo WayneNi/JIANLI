@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm run download-fonts && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "download-fonts": "node scripts/copy-fonts.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

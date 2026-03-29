@@ -5,8 +5,13 @@ const path = require('path');
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf');
 
 async function parsePdf(buffer) {
-  // Load the PDF
-  const loadingTask = pdfjsLib.getDocument({ data: buffer });
+  // Load the PDF with CMap support for Chinese fonts
+  const cmapsDir = path.join(__dirname, '..', 'node_modules', 'pdfjs-dist', 'cmaps');
+  const loadingTask = pdfjsLib.getDocument({
+    data: buffer,
+    cMapUrl: cmapsDir,
+    cMapPacked: true,
+  });
   const pdfDocument = await loadingTask.promise;
 
   const fullText = [];

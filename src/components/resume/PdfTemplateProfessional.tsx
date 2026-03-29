@@ -15,8 +15,8 @@ import type { TemplateType } from '@/lib/templates';
 Font.register({
   family: 'Noto Sans SC',
   fonts: [
-    { src: '/fonts/NotoSansSC-Regular.woff', fontWeight: 400 },
-    { src: '/fonts/NotoSansSC-Bold.woff', fontWeight: 700 },
+    { src: '/fonts/NotoSansSC-Regular.woff2', fontWeight: 400 },
+    { src: '/fonts/NotoSansSC-Bold.woff2', fontWeight: 700 },
   ],
 });
 
