@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Coins, Crown, CheckCircle2 } from 'lucide-react'
+import { Coins, Crown, CheckCircle2, FileText, Clock } from 'lucide-react'
 import { getCreditInfo } from '@/lib/credit'
+import prisma from '@/lib/db'
 
 export default async function DashboardPage({
   searchParams,
@@ -23,6 +24,20 @@ export default async function DashboardPage({
   const user = session.user
   const creditInfo = await getCreditInfo(user.id)
   const showPaymentSuccess = params.payment === 'success'
+
+  // Fetch optimization history
+  const optimizationHistory = await prisma.resume.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+    select: {
+      id: true,
+      originalText: true,
+      jobDescription: true,
+      atsScore: true,
+      createdAt: true,
+    },
+  })
 
   // Check if it's a new month for quota reset
   const now = new Date()
@@ -179,12 +194,57 @@ export default async function DashboardPage({
             <CardDescription>你最近的简历优化记录</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-12 text-gray-500">
-              <p>暂无优化记录</p>
-              <Link href="/dashboard/optimize" className="text-violet-600 hover:underline mt-2 inline-block">
-                开始第一次优化
-              </Link>
-            </div>
+            {optimizationHistory.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <p>暂无优化记录</p>
+                <Link href="/dashboard/optimize" className="text-violet-600 hover:underline mt-2 inline-block">
+                  开始第一次优化
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {optimizationHistory.map((record) => (
+                  <div
+                    key={record.id}
+                    className="flex items-start gap-4 p-4 rounded-lg border border-gray-200 hover:border-violet-200 transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-5 h-5 text-violet-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium text-gray-900 truncate">
+                          {record.originalText.slice(0, 50)}
+                          {record.originalText.length > 50 ? '...' : ''}
+                        </p>
+                        {record.atsScore !== null && (
+                          <Badge variant="outline" className="text-xs">
+                            ATS {record.atsScore}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        {record.jobDescription && (
+                          <span className="truncate max-w-xs">
+                            岗位: {record.jobDescription.slice(0, 30)}
+                            {record.jobDescription.length > 30 ? '...' : ''}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1 flex-shrink-0">
+                          <Clock className="w-3 h-3" />
+                          {record.createdAt.toLocaleDateString('zh-CN')}
+                        </span>
+                      </div>
+                    </div>
+                    <Link href="/dashboard/optimize">
+                      <Button variant="ghost" size="sm" className="text-violet-600">
+                        查看
+                      </Button>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

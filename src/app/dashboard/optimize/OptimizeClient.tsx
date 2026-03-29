@@ -39,6 +39,11 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
   const handleFileSelect = useCallback((file: File, text: string) => {
     setResumeText(text);
     setStatus('parsing');
+    setOptimizedResume(null);
+    setStreamData([]);
+    setShowCompare(false);
+    setShowCreditError(false);
+    setErrorMessage(null);
   }, []);
 
   const handleOptimize = useCallback(async () => {

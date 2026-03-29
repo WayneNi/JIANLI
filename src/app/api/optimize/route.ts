@@ -5,6 +5,7 @@ import { SYSTEM_PROMPT, SUGGESTION_PROMPT, OPTIMIZE_PROMPT, COVER_LETTER_PROMPT,
 import { parseAIResponse, parseSuggestionResponse } from '@/lib/resume-optimizer';
 import { analyzeResumeATS } from '@/lib/ats-checker';
 import { checkCredits, consumeCredits, reserveCredits, refundCredits } from '@/lib/credit';
+import prisma from '@/lib/db';
 import type { StreamChunk, ResumeSuggestion, OptimizedResume } from '@/types/resume';
 
 // MiniMax API endpoint
@@ -347,6 +348,7 @@ export async function POST(req: NextRequest) {
 
           let suggestion: ResumeSuggestion | undefined;
           let optimized: OptimizedResume;
+          let atsResult: { score: number; issues: string[]; suggestions: string[] } | undefined;
 
           // If JD is provided, run suggestion and optimization in PARALLEL
           if (jobDescription && jobDescription.trim()) {
@@ -420,7 +422,7 @@ export async function POST(req: NextRequest) {
             );
 
             // Get ATS result (was running in parallel)
-            const atsResult = await atsCheckPromise;
+            atsResult = await atsCheckPromise;
 
             // Send ATS check result
             controller.enqueue(
@@ -461,7 +463,7 @@ export async function POST(req: NextRequest) {
             optimized = parseAIResponse(fullResponse);
 
             // Wait for parallel ATS check
-            const atsResult = await atsCheckPromise;
+            atsResult = await atsCheckPromise;
 
             // Send ATS check result
             controller.enqueue(
@@ -506,6 +508,21 @@ export async function POST(req: NextRequest) {
               data: optimized,
             })
           );
+
+          // Save optimization record to database
+          try {
+            await prisma.resume.create({
+              data: {
+                userId: session.user.id,
+                originalText: resumeText,
+                optimizedText: JSON.stringify(optimized),
+                jobDescription: jobDescription || null,
+                atsScore: atsResult?.score || null,
+              },
+            });
+          } catch (e) {
+            console.error('[Optimize] Failed to save resume record:', e);
+          }
 
           controller.close();
         } catch (error) {
