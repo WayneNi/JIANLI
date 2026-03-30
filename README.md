@@ -1,36 +1,87 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Resume Optimizer (ResumeCraft)
+
+AI-powered resume optimization platform using the STAR method.
+
+## Tech Stack
+
+- **Framework**: Next.js 16.1.6 (App Router), React 19, TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui
+- **AI**: Vercel AI SDK, MiniMax API
+- **PDF**: `@react-pdf/renderer` (generation), `pdfjs-dist` (parsing via subprocess)
+- **Docx**: `mammoth` (parsing), `docx` (generation)
+- **Auth**: NextAuth v4 with Prisma adapter
+- **Database**: Prisma + PostgreSQL
+- **Payments**: Stripe
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+cd resume-optimizer
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm dev      # Development server (http://localhost:3000)
+pnpm build    # Production build
+pnpm start    # Production server
+pnpm lint     # ESLint check
+pnpm test     # Run Vitest tests
+pnpm test:ui  # Run tests with UI
+```
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+```
+MINIMAX_API_KEY=...
+MINIMAX_GROUP_ID=...
+NEXTAUTH_SECRET=...
+NEXTAUTH_URL=...
+DATABASE_URL=...
+STRIPE_SECRET_KEY=...
+STRIPE_WEBHOOK_SECRET=...
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Key Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **STAR Method Optimization**: Transform resume content using the STAR (Situation, Task, Action, Result) framework
+- **PDF/Docx Parsing**: Upload and parse resumes in multiple formats
+- **ATS Scoring**: Check resume compatibility with Applicant Tracking Systems
+- **Streaming Responses**: Real-time AI optimization feedback
+- **Credit System**: Pay-per-use credits for API calls
 
-## Deploy on Vercel
+## Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── optimize/    # Core AI optimization endpoint (streaming)
+│   │   ├── parse/       # PDF/Docx parsing
+│   │   ├── credits/     # Credit management
+│   │   ├── payments/    # Stripe checkout
+│   │   └── webhooks/stripe/
+│   ├── dashboard/
+│   │   ├── optimize/    # Main optimization page
+│   │   └── credits/
+│   ├── auth/            # Sign in / register pages
+│   └── pricing/
+├── components/
+│   ├── resume/          # Resume-related components
+│   └── ui/              # shadcn/ui components
+└── lib/
+    ├── ai-prompts.ts    # All AI prompt templates
+    ├── resume-optimizer.ts  # Core parsing/formatting logic
+    ├── ats-checker.ts   # ATS scoring logic
+    └── stripe.ts         # Stripe integration
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Adding UI Components
+
+```bash
+pnpm dlx shadcn-ui@latest add [component]
+```

@@ -37,34 +37,35 @@ export function generateWordDocument(resume: OptimizedResume): Document {
     );
 
     for (const exp of resume.experience) {
-      // Company and Duration
+      // Company, Position and Duration
       children.push(
         new Paragraph({
           children: [
             new TextRun({ text: exp.company, bold: true, size: 24 }),
-            new TextRun({ text: '    ' + exp.duration, size: 20, color: '666666' }),
+            new TextRun({ text: ' | ', size: 20, color: '999999' }),
+            new TextRun({ text: exp.position, italics: true, size: 22, color: '666666' }),
+            new TextRun({ text: '    ' + exp.duration, size: 20, color: '999999' }),
           ],
           spacing: { after: 100 },
-        })
-      );
-
-      // Position
-      children.push(
-        new Paragraph({
-          children: [new TextRun({ text: exp.position, italics: true })],
-          spacing: { after: 200 },
         })
       );
 
       // Description
       const desc = exp.starFormatted || exp.description;
       if (desc) {
-        children.push(
-          new Paragraph({
-            text: desc,
-            spacing: { after: 400 },
-          })
-        );
+        // Split by newlines and add indent for STAR format readability
+        const descLines = desc.split('\n');
+        for (const line of descLines) {
+          if (line.trim()) {
+            children.push(
+              new Paragraph({
+                children: [new TextRun({ text: '  ' + line.trim(), size: 20 })],
+                spacing: { after: 100 },
+              })
+            );
+          }
+        }
+        children.push(new Paragraph({ spacing: { after: 200 } })); // Empty line after description
       }
     }
   }
@@ -82,7 +83,7 @@ export function generateWordDocument(resume: OptimizedResume): Document {
     if (resume.skills.technical.length > 0) {
       children.push(
         new Paragraph({
-          text: '技术技能: ' + resume.skills.technical.join(' / '),
+          text: '技术技能: ' + resume.skills.technical.join(' • '),
           spacing: { after: 200 },
         })
       );
@@ -91,7 +92,7 @@ export function generateWordDocument(resume: OptimizedResume): Document {
     if (resume.skills.soft?.length) {
       children.push(
         new Paragraph({
-          text: '软技能: ' + resume.skills.soft.join(' / '),
+          text: '软技能: ' + resume.skills.soft.join(' • '),
           spacing: { after: 200 },
         })
       );
@@ -100,7 +101,7 @@ export function generateWordDocument(resume: OptimizedResume): Document {
     if (resume.skills.languages?.length) {
       children.push(
         new Paragraph({
-          text: '语言能力: ' + resume.skills.languages.join(' / '),
+          text: '语言能力: ' + resume.skills.languages.join(' • '),
           spacing: { after: 400 },
         })
       );

@@ -51,6 +51,7 @@ export interface OptimizedResume {
   experience: ResumeExperience[];
   skills: ResumeSkills;
   education: ResumeEducation[];
+  targetRole?: string;
 }
 
 // JD-based improvement suggestions
@@ -96,6 +97,7 @@ export interface StreamChunk {
   content?: string;
   data?: OptimizedResume;
   suggestion?: ResumeSuggestion;
+  suggestionError?: boolean;
   atsCheck?: AtsCheckResult;
   fromCache?: boolean;
   coverLetter?: {

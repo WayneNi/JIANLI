@@ -126,14 +126,9 @@ export function parseSuggestionResponse(rawJson: string): ResumeSuggestion {
     };
   } catch (error) {
     console.error('Failed to parse suggestion response:', error);
-    // Return empty suggestion on error to not break the flow
-    return {
-      matchScore: 0,
-      gapAnalysis: '无法生成建议',
-      skillGaps: [],
-      experienceSuggestions: [],
-      actionPlan: [],
-    };
+    // Throw error to signal that suggestion generation failed
+    // The API route will handle this and send an error chunk to the frontend
+    throw new Error('简历改善建议解析失败，无法生成有效建议');
   }
 }
 

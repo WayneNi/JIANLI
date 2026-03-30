@@ -371,7 +371,7 @@ export async function POST(req: NextRequest) {
             const [suggestionResponse, optimizeResponse] = await Promise.all([
               callMiniMaxAPI(
                 suggestionPrompt,
-                '你是一位专业的简历优化顾问，擅长分析简历与目标岗位的匹配度，并给出具体的改善建议。请严格按照JSON格式输出，必须包含 add、emphasize、remove 三种类型的建议，每种至少 1-2 条。',
+                '你是一位专业的简历优化顾问，擅长分析简历与目标岗位的匹配度。你的职责是识别简历与JD要求的真实差距，给出可执行的改善建议。重要原则：1. 只关注 JD 明确要求的技能、经验、素质 2. 不要编造 JD 未提及的要求（如"公司生态认知"） 3. 差距分析必须具体、可操作、与求职直接相关。请严格按照JSON格式输出，必须包含 add、emphasize、remove 三种类型的建议，每种至少 1-2 条。',
                 true,
                 4096 // Increased for more detailed suggestions
               ),
@@ -408,7 +408,15 @@ export async function POST(req: NextRequest) {
             suggestionText = suggestionResult;
             fullResponse = optimizeResult;
 
-            suggestion = parseSuggestionResponse(suggestionText);
+            // Parse suggestion separately - if it fails, we still want to return the optimized resume
+            let suggestionError = false;
+            try {
+              suggestion = parseSuggestionResponse(suggestionText);
+            } catch (e) {
+              console.error('Suggestion parsing failed:', e);
+              suggestionError = true;
+              suggestion = undefined;
+            }
             optimized = parseAIResponse(fullResponse);
 
             // Send suggestion to client
@@ -416,8 +424,9 @@ export async function POST(req: NextRequest) {
               sendChunk({
                 type: 'suggestion',
                 status: 'suggesting',
-                message: '改善建议生成完成',
+                message: suggestionError ? '改善建议生成失败' : '改善建议生成完成',
                 suggestion: suggestion,
+                suggestionError: suggestionError,
               })
             );
 

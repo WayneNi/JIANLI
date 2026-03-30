@@ -1,24 +1,16 @@
 "use client";
 
+import '@fontsource/noto-sans-sc/400.css';
+import '@fontsource/noto-sans-sc/700.css';
 import {
   Document,
   Page,
   Text,
   View,
   StyleSheet,
-  Font,
 } from '@react-pdf/renderer';
 import type { OptimizedResume, ResumeContact } from '@/types/resume';
 import type { TemplateType } from '@/lib/templates';
-
-// Register Noto Sans SC font for Chinese support
-Font.register({
-  family: 'Noto Sans SC',
-  fonts: [
-    { src: '/fonts/NotoSansSC-Regular.woff2', fontWeight: 400 },
-    { src: '/fonts/NotoSansSC-Bold.woff2', fontWeight: 700 },
-  ],
-});
 
 // Color palette - Professional resume colors
 const colors = {
@@ -559,8 +551,28 @@ interface ContactInfoProps {
   contactSeparator: any;
 }
 
+// 从 summary 中提取姓名（匹配常见中文姓名模式）
+function extractNameFromSummary(summary: string): string | undefined {
+  if (!summary) return undefined;
+  // 匹配 "我叫XXX" 或 "姓名：XXX" 等模式
+  const patterns = [
+    /(?:我叫|姓名[：:]?|name[：:]?\s*)([\u4e00-\u9fa5]{2,4})/,
+    /^([\u4e00-\u9fa5]{2,4})[\s，,]/,  // 开头姓名
+  ];
+  for (const pattern of patterns) {
+    const match = summary.match(pattern);
+    if (match) return match[1];
+  }
+  return undefined;
+}
+
+function hasAnyContactInfo(contact?: ResumeContact): boolean {
+  if (!contact) return false;
+  return !!(contact.email || contact.phone || contact.name);
+}
+
 function ContactInfo({ contact, contactRow, contactItem, contactSeparator }: ContactInfoProps) {
-  if (!contact) return null;
+  if (!contact || !hasAnyContactInfo(contact)) return null;
 
   const items: string[] = [];
   if (contact.email) items.push(contact.email);
@@ -582,18 +594,35 @@ function ContactInfo({ contact, contactRow, contactItem, contactSeparator }: Con
 interface ResumePDFProps {
   resume: OptimizedResume;
   template?: TemplateType;
+  targetRole?: string;
 }
 
-export function ResumePDF({ resume, template = 'simple' }: ResumePDFProps) {
+export function ResumePDF({ resume, template = 'simple', targetRole }: ResumePDFProps) {
   const styles = getStyles(template);
   const isExecutive = template === 'professional';
 
+  // Check if resume has any content
+  const hasContent = resume.summary ||
+    (resume.experience && resume.experience.length > 0) ||
+    (resume.skills && resume.skills.technical && resume.skills.technical.length > 0);
+
   // Extract name from contact or summary
-  const name = resume.contact?.name || '简历';
-  const titleText = resume.contact?.email || 'Professional Resume';
+  const name = resume.contact?.name || extractNameFromSummary(resume.summary) || '我的简历';
+  const titleText = targetRole || '';
 
   // Get contact info
   const contact = resume.contact;
+
+  // Don't render if no content
+  if (!hasContent) {
+    return (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          <Text>No resume content available</Text>
+        </Page>
+      </Document>
+    );
+  }
 
   return (
     <Document>

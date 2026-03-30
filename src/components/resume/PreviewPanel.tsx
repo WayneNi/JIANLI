@@ -425,6 +425,7 @@ export function PreviewPanel({
       </div>
     </div>
   );
+  };
 
   // Render Experience Tab
   const renderExperienceTab = () => (

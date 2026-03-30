@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { Packer } from 'docx';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
@@ -9,17 +9,19 @@ import { Button } from '@/components/ui/button';
 import type { OptimizedResume } from '@/types/resume';
 import { TEMPLATES, type TemplateType } from '@/lib/templates';
 import { ResumePDF } from './PdfTemplateProfessional';
+import { TemplateMiniPreview } from './TemplateMiniPreview';
 import { generateWordDocument } from '@/lib/doc-generator';
 
 interface DownloadOptionsProps {
   resume: OptimizedResume | null;
+  targetRole?: string;
 }
 
-export function DownloadOptions({ resume }: DownloadOptionsProps) {
+export function DownloadOptions({ resume, targetRole }: DownloadOptionsProps) {
   const [isGeneratingWord, setIsGeneratingWord] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('simple');
-  const [hoveredTemplate, setHoveredTemplate] = useState<TemplateType | null>(null);
+  const [expandedTemplate, setExpandedTemplate] = useState<TemplateType | null>(null);
 
   const handleDownloadWord = async () => {
     if (!resume) return;
@@ -41,7 +43,7 @@ export function DownloadOptions({ resume }: DownloadOptionsProps) {
 
     setIsGeneratingPdf(true);
     try {
-      const blob = await pdf(<ResumePDF resume={resume} template={selectedTemplate} />).toBlob();
+      const blob = await pdf(<ResumePDF resume={resume} template={selectedTemplate} targetRole={targetRole} />).toBlob();
       saveAs(blob, 'optimized_resume.pdf');
     } catch (error) {
       console.error('PDF generation error:', error);
@@ -54,8 +56,8 @@ export function DownloadOptions({ resume }: DownloadOptionsProps) {
     return null;
   }
 
-  const displayTemplate = hoveredTemplate || selectedTemplate;
-  const templateConfig = TEMPLATES.find(t => t.id === displayTemplate)!;
+  const activeTemplate = expandedTemplate || selectedTemplate;
+  const templateConfig = TEMPLATES.find(t => t.id === activeTemplate)!;
 
   return (
     <div className="space-y-5">
@@ -70,78 +72,93 @@ export function DownloadOptions({ resume }: DownloadOptionsProps) {
       {/* Template Cards */}
       <div className="grid grid-cols-1 gap-3">
         {TEMPLATES.map((template) => (
-          <button
-            key={template.id}
-            onClick={() => setSelectedTemplate(template.id)}
-            onMouseEnter={() => setHoveredTemplate(template.id)}
-            onMouseLeave={() => setHoveredTemplate(null)}
-            className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 ${
-              selectedTemplate === template.id
-                ? 'border-2 shadow-md'
-                : 'border border-gray-200 hover:border-gray-300 hover:shadow-sm'
-            }`}
-            style={{
-              borderColor: selectedTemplate === template.id ? template.color : undefined,
-              backgroundColor: selectedTemplate === template.id ? `${template.color}08` : '#ffffff',
-            }}
-          >
-            {/* Selected indicator */}
-            {selectedTemplate === template.id && (
+          <Fragment key={template.id}>
+            <button
+              onClick={() => setSelectedTemplate(template.id)}
+              onMouseEnter={() => setExpandedTemplate(template.id)}
+              onMouseLeave={() => setExpandedTemplate(null)}
+              className={`relative p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                selectedTemplate === template.id
+                  ? 'border-2 shadow-md'
+                  : 'border border-gray-200 hover:border-gray-300 hover:shadow-sm'
+              }`}
+              style={{
+                borderColor: selectedTemplate === template.id ? template.color : undefined,
+                backgroundColor: selectedTemplate === template.id ? `${template.color}08` : '#ffffff',
+              }}
+            >
+              {/* Selected indicator */}
+              {selectedTemplate === template.id && (
+                <div
+                  className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: template.color }}
+                >
+                  <Check className="h-3 w-3 text-white" />
+                </div>
+              )}
+
+              {/* Template name and description */}
+              <div className="flex items-start gap-3">
+                {/* Color indicator bar */}
+                <div
+                  className="w-1 h-12 rounded-full flex-shrink-0 mt-0.5"
+                  style={{ backgroundColor: template.color }}
+                />
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <p
+                      className="font-bold text-base"
+                      style={{ color: template.color }}
+                    >
+                      {template.name}
+                    </p>
+                    <span className="text-xs text-gray-400">
+                      {template.nameEn}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    {template.description}
+                  </p>
+
+                  {/* Features */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {template.features.slice(0, 3).map((feature, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs"
+                        style={{
+                          backgroundColor: `${template.color}15`,
+                          color: template.color,
+                        }}
+                      >
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Best for */}
+                  <p className="text-xs text-gray-400 mt-2">
+                    适合: {template.bestFor.slice(0, 3).join('、')}
+                  </p>
+                </div>
+              </div>
+            </button>
+            {expandedTemplate === template.id && (
               <div
-                className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: template.color }}
+                className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-gray-50 transition-all duration-200 ease-out"
+                style={{ maxHeight: '400px' }}
               >
-                <Check className="h-3 w-3 text-white" />
+                <div className="p-2">
+                  <TemplateMiniPreview
+                    resume={resume}
+                    template={template.id}
+                    targetRole={targetRole}
+                  />
+                </div>
               </div>
             )}
-
-            {/* Template name and description */}
-            <div className="flex items-start gap-3">
-              {/* Color indicator bar */}
-              <div
-                className="w-1 h-12 rounded-full flex-shrink-0 mt-0.5"
-                style={{ backgroundColor: template.color }}
-              />
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <p
-                    className="font-bold text-base"
-                    style={{ color: template.color }}
-                  >
-                    {template.name}
-                  </p>
-                  <span className="text-xs text-gray-400">
-                    {template.nameEn}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 mt-0.5">
-                  {template.description}
-                </p>
-
-                {/* Features */}
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {template.features.slice(0, 3).map((feature, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center px-2 py-0.5 rounded text-xs"
-                      style={{
-                        backgroundColor: `${template.color}15`,
-                        color: template.color,
-                      }}
-                    >
-                      {feature}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Best for */}
-                <p className="text-xs text-gray-400 mt-2">
-                  适合: {template.bestFor.slice(0, 3).join('、')}
-                </p>
-              </div>
-            </div>
-          </button>
+          </Fragment>
         ))}
       </div>
 
