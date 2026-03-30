@@ -199,6 +199,7 @@ async function* streamAIResponse(response: Response): AsyncGenerator<string> {
             // Try all possible field names
             content =
               choice?.delta?.content ||
+              choice?.delta?.reasoning_content ||
               choice?.message?.content ||
               choice?.text ||
               choice?.content ||
