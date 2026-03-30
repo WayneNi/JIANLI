@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>优化预览 UI 设计方案对比</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .star-highlight {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      border-left: 3px solid #10b981;
+    }
+    .tab-active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .badge-match { background: #10b981; color: white; }
+    .badge-gap { background: #f59e0b; color: white; }
+    .badge-action { background: #3b82f6; color: white; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-100 to-slate-200 min-h-screen p-8">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold text-slate-800 mb-2">优化预览 UI 设计方案</h1>
+    <p class="text-slate-600 mb-8">点击各个标签页查看不同设计方案</p>
+
+    <!-- Tab Navigation -->
+    <div class="flex gap-2 mb-6">
+      <button onclick="showDesign(1)" id="tab1" class="tab-active px-6 py-3 rounded-lg font-medium transition-all">方案一：标签式导航</button>
+      <button onclick="showDesign(2)" id="tab2" class="bg-white px-6 py-3 rounded-lg font-medium text-slate-600 hover:bg-slate-50 transition-all">方案二：层级折叠</button>
+      <button onclick="showDesign(3)" id="tab3" class="bg-white px-6 py-3 rounded-lg font-medium text-slate-600 hover:bg-slate-50 transition-all">方案三：双栏布局</button>
+    </div>
+
+    <!-- Design 1: Tab-based -->
+    <div id="design1" class="design-content">
+      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-white font-semibold text-lg">优化预览</h2>
+            <div class="flex gap-1">
+              <span class="bg-white/20 text-white text-xs px-2 py-1 rounded">已完成</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex border-b bg-slate-50 overflow-x-auto">
+          <button class="flex-1 py-3 text-sm font-medium text-indigo-600 border-b-2 border-indigo-600 bg-white min-w-[80px]">摘要</button>
+          <button class="flex-1 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 min-w-[80px]">工作经历</button>
+          <button class="flex-1 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 min-w-[80px]">技能&教育</button>
+          <button class="flex-1 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 min-w-[80px]">ATS评分</button>
+          <button class="flex-1 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 min-w-[80px]">优化建议</button>
+        </div>
+
+        <!-- Content Area -->
+        <div class="p-6">
+          <!-- Summary Tab Content -->
+          <div class="space-y-4">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                <span class="text-indigo-600 font-bold">李</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-800">李明</h3>
+                <p class="text-sm text-slate-500">产品经理 · 5年经验</p>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 rounded-xl p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">个人简介</span>
+                <button class="text-xs text-indigo-600 hover:text-indigo-700">编辑</button>
+              </div>
+              <p class="text-slate-700 leading-relaxed">
+                拥有5年互联网产品经验，曾在字节跳动负责DAU过千万的产品优化。通过数据分析驱动决策，主导的推荐系统重构项目提升用户留存15%。擅长跨部门协作，具备从0到1搭建产品能力。
+              </p>
+            </div>
+
+            <!-- Quick ATS Summary -->
+            <div class="grid grid-cols-3 gap-3">
+              <div class="bg-emerald-50 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-emerald-600">A</div>
+                <div class="text-xs text-slate-500 mt-1">ATS等级</div>
+              </div>
+              <div class="bg-blue-50 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-blue-600">85</div>
+                <div class="text-xs text-slate-500 mt-1">匹配分数</div>
+              </div>
+              <div class="bg-amber-50 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-amber-600">3</div>
+                <div class="text-xs text-slate-500 mt-1">待改进项</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 p-4 bg-blue-50 rounded-xl">
+        <h4 class="font-medium text-blue-800 mb-2">方案一特点</h4>
+        <ul class="text-sm text-blue-700 space-y-1">
+          <li>• 使用标签页组织内容，用户按需查看</li>
+          <li>• 大幅减少单屏信息量，避免视觉疲劳</li>
+          <li>• ATS评分和匹配度以卡片形式嵌入摘要页</li>
+          <li>• 当前活跃标签高亮显示</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Design 2: Collapsible Hierarchy -->
+    <div id="design2" class="design-content hidden">
+      <div class="bg-white rounded-2xl shadow-xl overflow-hidden max-h-[600px] overflow-y-auto">
+        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-white font-semibold text-lg">优化预览</h2>
+            <span class="bg-white/20 text-white text-sm px-3 py-1 rounded-full">已完成</span>
+          </div>
+        </div>
+
+        <div class="p-4 space-y-3">
+          <!-- Primary Card: ATS Summary (always visible) -->
+          <div class="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-100">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
+                  <span class="text-white font-bold text-sm">A</span>
+                </div>
+                <div>
+                  <div class="font-semibold text-slate-800">ATS 评分: 85分 (等级 A)</div>
+                  <div class="text-xs text-slate-500">格式 ✓ 关键词 ✓ 结构 ✓ 内容 △</div>
+                </div>
+              </div>
+              <button class="text-xs text-emerald-600 hover:text-emerald-700 font-medium">查看详情 →</button>
+            </div>
+          </div>
+
+          <!-- JD Match Card -->
+          <div class="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-4 border border-violet-100">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="badge-match text-xs px-2 py-1 rounded-full font-medium">JD匹配 85%</span>
+              <span class="badge-gap text-xs px-2 py-1 rounded-full">技能缺口: Python, 数据分析</span>
+            </div>
+            <p class="text-sm text-slate-600">建议强调项目管理经验和跨团队协作能力，这与JD高度相关。</p>
+          </div>
+
+          <!-- Summary (Collapsible) -->
+          <details class="bg-slate-50 rounded-xl border border-slate-100" open>
+            <summary class="p-4 cursor-pointer flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-600">📋</span>
+                <span class="font-medium text-slate-700">个人简介</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="text-xs text-indigo-600 hover:text-indigo-700">编辑</button>
+                <span class="text-slate-400">▼</span>
+              </div>
+            </summary>
+            <div class="px-4 pb-4">
+              <p class="text-sm text-slate-700 leading-relaxed">拥有5年互联网产品经验，曾在字节跳动负责DAU过千万的产品优化...</p>
+            </div>
+          </details>
+
+          <!-- Experience (Collapsible) -->
+          <details class="bg-slate-50 rounded-xl border border-slate-100" open>
+            <summary class="p-4 cursor-pointer flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-600">💼</span>
+                <span class="font-medium text-slate-700">工作经历</span>
+                <span class="bg-indigo-100 text-indigo-600 text-xs px-2 py-0.5 rounded-full">3</span>
+              </div>
+              <span class="text-slate-400">▶</span>
+            </summary>
+            <div class="px-4 pb-4 space-y-3">
+              <!-- Experience 1 -->
+              <div class="bg-white rounded-lg p-3 border border-slate-100">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-medium text-slate-800 text-sm">高级产品经理</span>
+                  <span class="text-xs text-slate-500">2021-至今</span>
+                </div>
+                <p class="text-xs text-slate-500 mb-2">字节跳动 · 推荐系统部门</p>
+                <div class="star-highlight p-2 rounded text-xs text-slate-700">
+                  <span class="font-medium text-emerald-700">✨ STAR优化:</span> 主导推荐系统重构项目，通过A/B测试优化算法策略，提升用户次日留存率15%，日均使用时长增加3分钟
+                </div>
+              </div>
+              <!-- Experience 2 -->
+              <div class="bg-white rounded-lg p-3 border border-slate-100">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-medium text-slate-800 text-sm">产品经理</span>
+                  <span class="text-xs text-slate-500">2018-2021</span>
+                </div>
+                <p class="text-xs text-slate-500 mb-2">阿里巴巴 · 淘宝直播</p>
+                <div class="text-xs text-slate-500 italic">通过数据驱动决策，提升直播转化率...</div>
+              </div>
+            </div>
+          </details>
+
+          <!-- Skills (Collapsed by default) -->
+          <details class="bg-slate-50 rounded-xl border border-slate-100">
+            <summary class="p-4 cursor-pointer flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-600">🛠️</span>
+                <span class="font-medium text-slate-700">技能</span>
+              </div>
+              <span class="text-slate-400">▶</span>
+            </summary>
+            <div class="px-4 pb-4">
+              <div class="flex flex-wrap gap-2">
+                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">产品设计</span>
+                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">数据分析</span>
+                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">SQL</span>
+                <span class="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-full">跨部门协作</span>
+                <span class="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-full">项目管理</span>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <div class="mt-6 p-4 bg-emerald-50 rounded-xl">
+        <h4 class="font-medium text-emerald-800 mb-2">方案二特点</h4>
+        <ul class="text-sm text-emerald-700 space-y-1">
+          <li>• 层级折叠设计，重要信息（ATS、匹配度）置顶显示</li>
+          <li>• STAR优化内容用绿色高亮框突出</li>
+          <li>• 展开/折叠状态清晰，减少视觉干扰</li>
+          <li>• 符合用户从上到下的阅读习惯</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Design 3: Two-Column Layout -->
+    <div id="design3" class="design-content hidden">
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Left Column: Suggestions & ATS -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div class="bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-4">
+            <h2 class="text-white font-semibold text-lg">优化分析</h2>
+          </div>
+          <div class="p-4 space-y-3 max-h-[500px] overflow-y-auto">
+            <!-- ATS Score -->
+            <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                  <span class="text-white font-bold text-xl">A</span>
+                </div>
+                <div>
+                  <div class="text-2xl font-bold text-slate-800">85<span class="text-sm font-normal text-slate-500">/100</span></div>
+                  <div class="text-xs text-slate-500">ATS评分等级 A</div>
+                </div>
+              </div>
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-emerald-500">✓</span>
+                  <span class="text-slate-600">格式规范</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-emerald-500">✓</span>
+                  <span class="text-slate-600">关键词匹配</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-amber-500">△</span>
+                  <span class="text-slate-600">内容量化不足</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- JD Match -->
+            <div class="bg-violet-50 rounded-xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-medium text-slate-700">JD匹配度</span>
+                <span class="badge-match text-xs px-2 py-1 rounded-full">85%</span>
+              </div>
+              <div class="w-full bg-violet-100 rounded-full h-2 mb-2">
+                <div class="bg-violet-500 h-2 rounded-full" style="width: 85%"></div>
+              </div>
+              <p class="text-xs text-slate-600">项目管理经验与数据驱动能力与JD高度匹配</p>
+            </div>
+
+            <!-- Skill Gaps -->
+            <div class="bg-rose-50 rounded-xl p-4">
+              <div class="font-medium text-slate-700 mb-2">技能缺口</div>
+              <div class="flex flex-wrap gap-2">
+                <span class="bg-rose-100 text-rose-700 text-xs px-2 py-1 rounded-full">Python</span>
+                <span class="bg-rose-100 text-rose-700 text-xs px-2 py-1 rounded-full">A/B测试</span>
+                <span class="bg-rose-100 text-rose-700 text-xs px-2 py-1 rounded-full">机器学习基础</span>
+              </div>
+            </div>
+
+            <!-- Action Plan -->
+            <div class="bg-blue-50 rounded-xl p-4">
+              <div class="font-medium text-slate-700 mb-2">优化建议</div>
+              <ol class="text-xs text-slate-600 space-y-1">
+                <li class="flex gap-2"><span class="text-blue-500 font-bold">1.</span> 在工作经历中添加量化数据（15%提升）</li>
+                <li class="flex gap-2"><span class="text-blue-500 font-bold">2.</span> 强调跨团队协作成果</li>
+                <li class="flex gap-2"><span class="text-blue-500 font-bold">3.</span> 补充Python技能或相关培训经历</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Resume Content -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-white font-semibold text-lg">简历内容</h2>
+              <button class="bg-white/20 text-white text-xs px-3 py-1 rounded hover:bg-white/30">编辑</button>
+            </div>
+          </div>
+          <div class="p-4 space-y-3 max-h-[500px] overflow-y-auto">
+            <!-- Contact -->
+            <div class="flex items-center gap-3 pb-3 border-b border-slate-100">
+              <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                <span class="text-indigo-600 font-bold">李</span>
+              </div>
+              <div>
+                <div class="font-semibold text-slate-800">李明</div>
+                <div class="text-xs text-slate-500">product@email.com · 138****8888</div>
+              </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="bg-slate-50 rounded-lg p-3">
+              <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">个人简介</div>
+              <p class="text-sm text-slate-700">拥有5年互联网产品经验，曾在字节跳动负责DAU过千万的产品优化...</p>
+            </div>
+
+            <!-- Experience Preview -->
+            <div class="bg-slate-50 rounded-lg p-3">
+              <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">工作经历 (3)</div>
+              <div class="space-y-2">
+                <div class="bg-white rounded border border-slate-100 p-2">
+                  <div class="flex justify-between text-sm">
+                    <span class="font-medium text-slate-700">高级产品经理</span>
+                    <span class="text-xs text-slate-400">2021-至今</span>
+                  </div>
+                  <div class="text-xs text-slate-500">字节跳动</div>
+                  <div class="star-highlight mt-1 p-2 rounded text-xs">
+                    <span class="font-medium text-emerald-700">✨ STAR:</span> 主导推荐系统重构，提升留存15%
+                  </div>
+                </div>
+              </div>
+              <button class="text-xs text-indigo-600 mt-2 hover:text-indigo-700">展开全部 3 条经历 →</button>
+            </div>
+
+            <!-- Skills Preview -->
+            <div class="bg-slate-50 rounded-lg p-3">
+              <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">技能</div>
+              <div class="flex flex-wrap gap-1">
+                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">产品设计</span>
+                <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">SQL</span>
+                <span class="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded-full">协作</span>
+                <span class="bg-slate-200 text-slate-600 text-xs px-2 py-0.5 rounded-full">+2</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 p-4 bg-amber-50 rounded-xl">
+        <h4 class="font-medium text-amber-800 mb-2">方案三特点</h4>
+        <ul class="text-sm text-amber-700 space-y-1">
+          <li>• 左右双栏：左侧优化分析，右侧简历内容</li>
+          <li>• 分析建议和简历内容一目了然，方便对照</li>
+          <li>• ATS评分和技能缺口可视化展示</li>
+          <li>• 右侧简历内容可展开查看更多细节</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showDesign(num) {
+      // Hide all designs
+      document.querySelectorAll('.design-content').forEach(el => el.classList.add('hidden'));
+      // Show selected design
+      document.getElementById('design' + num).classList.remove('hidden');
+      // Update tabs
+      document.querySelectorAll('[id^="tab"]').forEach((tab, i) => {
+        if (i === num - 1) {
+          tab.classList.add('tab-active');
+          tab.classList.remove('bg-white', 'text-slate-600');
+        } else {
+          tab.classList.remove('tab-active');
+          tab.classList.add('bg-white', 'text-slate-600');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -17,6 +17,8 @@ export default async function OptimizePage() {
       initialCredits={user.credits}
       isLifetime={user.isLifetime}
       email={user.email}
+      userName={user.name || undefined}
+      userAvatar={user.image || undefined}
     />
   )
 }

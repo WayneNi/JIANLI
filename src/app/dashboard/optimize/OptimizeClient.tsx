@@ -16,13 +16,28 @@ import { InterviewQuestionsGenerator } from '@/components/resume/InterviewQuesti
 import { Sparkles, FileText, Eye, ArrowLeft, Coins, Crown, AlertCircle } from 'lucide-react';
 import type { OptimizeStatus, StreamChunk, OptimizedResume } from '@/types/resume';
 
+function extractTargetRole(jobDescription: string): string {
+  if (!jobDescription) return '';
+  const patterns = [
+    /(?:岗位|职位|应聘|申请|目标)[：:]\s*(.+)/i,
+    /^(.+?)(?:工程师|经理|总监|专员|助理|专家)/,
+  ];
+  for (const pattern of patterns) {
+    const match = jobDescription.match(pattern);
+    if (match) return match[1].trim();
+  }
+  return '';
+}
+
 interface OptimizeClientProps {
   initialCredits: number;
   isLifetime: boolean;
   email: string;
+  userName?: string;
+  userAvatar?: string;
 }
 
-export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeClientProps) {
+export function OptimizeClient({ initialCredits, isLifetime, email, userName, userAvatar }: OptimizeClientProps) {
   const router = useRouter();
   const [resumeText, setResumeText] = useState('');
   const [jobDescription, setJobDescription] = useState('');
@@ -35,6 +50,7 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
   const [credits, setCredits] = useState(initialCredits);
   const [showCreditError, setShowCreditError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [suggestionError, setSuggestionError] = useState(false);
 
   const handleFileSelect = useCallback((file: File, text: string) => {
     setResumeText(text);
@@ -44,6 +60,17 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
     setShowCompare(false);
     setShowCreditError(false);
     setErrorMessage(null);
+    setSuggestionError(false);
+  }, []);
+
+  const resetOptimizationState = useCallback(() => {
+    setOptimizedResume(null);
+    setStreamData([]);
+    setStatus('idle');
+    setShowCompare(false);
+    setErrorMessage(null);
+    setSuggestionError(false);
+    setIsOptimizing(false); // Ensure optimizing state is reset
   }, []);
 
   const handleOptimize = useCallback(async () => {
@@ -106,6 +133,10 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
                 if (parsed.remaining !== undefined) {
                   setCredits(parsed.remaining);
                 }
+              }
+
+              if (parsed.type === 'suggestion' && parsed.suggestionError) {
+                setSuggestionError(true);
               }
 
               if (parsed.type === 'error') {
@@ -318,6 +349,9 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
               streamData={streamData}
               status={status}
               resume={optimizedResume}
+              userName={userName}
+              userEmail={email}
+              userAvatar={userAvatar}
             />
           </div>
 
@@ -331,12 +365,42 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
                     <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                       <Sparkles className="w-5 h-5 text-green-600" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <p className="font-medium text-green-800">优化完成！</p>
                       <p className="text-sm text-green-600">基于 STAR 法则已完成优化</p>
                     </div>
+                    {suggestionError && (
+                      <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                        建议生成失败
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
+
+                {/* Suggestion Error Card */}
+                {suggestionError && (
+                  <Card className="border-amber-200 bg-amber-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-amber-600" />
+                          <span className="text-sm text-amber-700">简历改善建议生成失败</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            resetOptimizationState();
+                            handleOptimize();
+                          }}
+                          className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                        >
+                          重新生成
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Compare Button */}
                 <Button
@@ -348,13 +412,26 @@ export function OptimizeClient({ initialCredits, isLifetime, email }: OptimizeCl
                   对比原始简历
                 </Button>
 
+                {/* Regenerate Button */}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    resetOptimizationState();
+                    handleOptimize();
+                  }}
+                  className="w-full gap-2 border-violet-200 text-violet-700 hover:bg-violet-50"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  重新生成
+                </Button>
+
                 {/* Download Options */}
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">下载优化结果</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <DownloadOptions resume={optimizedResume} />
+                    <DownloadOptions resume={optimizedResume} targetRole={extractTargetRole(jobDescription)} />
                   </CardContent>
                 </Card>
 
