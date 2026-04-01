@@ -1,14 +1,8 @@
 "use client";
 
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import '@fontsource/noto-sans-sc/400.css';
 import '@fontsource/noto-sans-sc/700.css';
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-} from '@react-pdf/renderer';
 import type { OptimizedResume, ResumeContact } from '@/types/resume';
 import type { TemplateType } from '@/lib/templates';
 
@@ -546,8 +540,11 @@ const getStyles = (template: TemplateType) => {
 // Helper component to render contact info
 interface ContactInfoProps {
   contact?: ResumeContact;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contactRow: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contactItem: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   contactSeparator: any;
 }
 
