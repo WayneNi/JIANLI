@@ -51,6 +51,9 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
   const [showCreditError, setShowCreditError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [suggestionError, setSuggestionError] = useState(false);
+  const [resetTrigger, setResetTrigger] = useState(0);
+  const [hasJobDescription, setHasJobDescription] = useState(false);
+  const [timeoutError, setTimeoutError] = useState(false);
 
   const handleFileSelect = useCallback((file: File, text: string) => {
     setResumeText(text);
@@ -61,6 +64,9 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
     setShowCreditError(false);
     setErrorMessage(null);
     setSuggestionError(false);
+    setResetTrigger(prev => prev + 1);
+    setHasJobDescription(false);
+    setTimeoutError(false);
   }, []);
 
   const resetOptimizationState = useCallback(() => {
@@ -81,6 +87,9 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
     setStreamData([]);
     setOptimizedResume(null);
     setShowCreditError(false);
+    setHasJobDescription(!!jobDescription.trim());
+    setSuggestionError(false);
+    setTimeoutError(false);
 
     try {
       const response = await fetch('/api/optimize', {
@@ -105,9 +114,25 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
         throw new Error('Failed to read response');
       }
 
+      const TIMEOUT_MS = 90000;
+      let bytesReceived = false;
+      const timeoutId: ReturnType<typeof setTimeout> = setTimeout(() => {
+        if (!bytesReceived) {
+          reader.cancel();
+          setErrorMessage('网络连接超时，请检查网络后重试');
+          setStatus('error');
+          setIsOptimizing(false);
+        }
+      }, TIMEOUT_MS);
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+
+        if (value && value.length > 0) {
+          bytesReceived = true;
+          clearTimeout(timeoutId);
+        }
 
         const chunk = decoder.decode(value);
         const lines = chunk.split('\n');
@@ -161,6 +186,7 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
       setErrorMessage(errMsg);
       setStatus('error');
     } finally {
+      clearTimeout(timeoutId);
       setIsOptimizing(false);
     }
   }, [resumeText, jobDescription]);
@@ -352,6 +378,9 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
               userName={userName}
               userEmail={email}
               userAvatar={userAvatar}
+              resetTrigger={resetTrigger}
+              hasJobDescription={hasJobDescription}
+              suggestionError={suggestionError}
             />
           </div>
 
