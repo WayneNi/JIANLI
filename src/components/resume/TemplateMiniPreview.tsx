@@ -28,7 +28,7 @@ const templateStyles = {
   },
 };
 
-export function TemplateMiniPreview({ resume, template, targetRole }: TemplateMiniPreviewProps) {
+export function TemplateMiniPreview({ resume, template }: TemplateMiniPreviewProps) {
   const styles = templateStyles[template];
   const isProfessional = template === 'professional';
 

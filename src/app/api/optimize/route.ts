@@ -50,7 +50,8 @@ function setCachedResult(resumeText: string, jobDescription: string, result: { o
   cache.set(key, { result, timestamp: Date.now() });
 }
 
-const FETCH_TIMEOUT_MS = 30000; // 30 seconds
+const FETCH_TIMEOUT_MS = 60000; // 60 seconds
+const MAX_RETRIES = 5; // 5 retries
 
 async function fetchWithTimeout(
   url: string,
@@ -82,7 +83,7 @@ async function callMiniMaxAPI(
   systemPrompt: string = SYSTEM_PROMPT,
   stream: boolean = true,
   maxTokens: number = 8192,
-  retries: number = 3
+  retries: number = MAX_RETRIES
 ): Promise<Response> {
   const apiKey = process.env.MINIMAX_API_KEY;
 
@@ -146,11 +147,17 @@ async function callMiniMaxAPI(
       console.error(`[MiniMax] Attempt ${attempt} failed:`, lastError.message);
 
       if (attempt < retries) {
-        const backoffMs = 1000 * attempt; // 1s, 2s, 3s
+        const backoffMs = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s, 8s, 16s
         console.log(`[MiniMax] Retrying in ${backoffMs}ms...`);
         await new Promise((resolve) => setTimeout(resolve, backoffMs));
       }
     }
+  }
+
+  // Fallback: try non-stream mode if stream mode failed
+  if (stream) {
+    console.log('[MiniMax] Stream mode failed, trying non-stream mode...');
+    return callMiniMaxAPI(prompt, systemPrompt, false, maxTokens, 2);
   }
 
   throw lastError;

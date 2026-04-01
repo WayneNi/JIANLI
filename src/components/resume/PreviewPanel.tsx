@@ -61,6 +61,9 @@ interface PreviewPanelProps {
   userName?: string;
   userEmail?: string;
   userAvatar?: string;
+  resetTrigger?: number;
+  hasJobDescription?: boolean;
+  suggestionError?: boolean;
 }
 
 export function PreviewPanel({
@@ -71,6 +74,9 @@ export function PreviewPanel({
   userName,
   userEmail,
   userAvatar,
+  resetTrigger,
+  hasJobDescription = false,
+  suggestionError = false,
 }: PreviewPanelProps) {
   const [activeTab, setActiveTab] = useState<TabId>('summary');
   const [optimizedResume, setOptimizedResume] =
@@ -92,6 +98,24 @@ export function PreviewPanel({
 
   // ATS state
   const [atsCheck, setAtsCheck] = useState<AtsCheckResult | null>(null);
+
+  // Local suggestion error state
+  const [localSuggestionError, setLocalSuggestionError] = useState(false);
+
+  // Listen for reset trigger to clear all state when new resume is uploaded
+  useEffect(() => {
+    if (resetTrigger && resetTrigger > 0) {
+      setOptimizedResume(null);
+      setSuggestion(null);
+      setAtsCheck(null);
+      setLocalSuggestionError(false);
+      setIsEditing(false);
+      setEditingSection(null);
+      setEditingIndex(null);
+      setEditValue('');
+      setStreamData([]);
+    }
+  }, [resetTrigger]);
 
   // Update from prop when it changes (for tab switching)
   useEffect(() => {
@@ -116,6 +140,14 @@ export function PreviewPanel({
     );
     if (suggestionChunk?.suggestion && !suggestion) {
       setSuggestion(suggestionChunk.suggestion);
+    }
+
+    // Check for suggestionError
+    const errorChunk = streamData.find(
+      (chunk) => chunk.type === 'suggestion' && chunk.suggestionError
+    );
+    if (errorChunk?.suggestionError !== undefined) {
+      setLocalSuggestionError(errorChunk.suggestionError);
     }
 
     // Then check for done chunk
@@ -758,8 +790,8 @@ export function PreviewPanel({
           <div className="flex items-start gap-2">
             <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.primary }} />
             <p className="text-sm" style={{ color: COLORS.text }}>
-              {suggestion?.gapAnalysis
-                ? 'JD匹配度分析生成失败，请重试或稍后再试'
+              {hasJobDescription && localSuggestionError
+                ? '简历改善建议生成失败，请重试或稍后再试'
                 : '未填写目标岗位JD，请填写后可获得详细的匹配度分析和改善建议'}
             </p>
           </div>
