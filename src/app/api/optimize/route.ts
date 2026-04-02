@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/auth.config';
-import { SYSTEM_PROMPT, SUGGESTION_PROMPT, OPTIMIZE_PROMPT, COVER_LETTER_PROMPT, INTERVIEW_QUESTIONS_PROMPT } from '@/lib/ai-prompts';
+import { SYSTEM_PROMPT, STRICT_SYSTEM_PROMPT, SUGGESTION_PROMPT, OPTIMIZE_PROMPT, COVER_LETTER_PROMPT, INTERVIEW_QUESTIONS_PROMPT, MAX_PARSE_ATTEMPTS } from '@/lib/ai-prompts';
 import { parseAIResponse, parseSuggestionResponse } from '@/lib/resume-optimizer';
 import { analyzeResumeATS } from '@/lib/ats-checker';
 import { checkCredits, consumeCredits, reserveCredits, refundCredits } from '@/lib/credit';
 import prisma from '@/lib/db';
-import type { StreamChunk, ResumeSuggestion, OptimizedResume } from '@/types/resume';
+import type { StreamChunk, ResumeSuggestion, OptimizedResume, AtsCheckResult } from '@/types/resume';
 
 // MiniMax API endpoint
 const MINIMAX_API_URL = 'https://api.minimax.chat/v1/text/chatcompletion_v2';
@@ -50,17 +50,65 @@ function setCachedResult(resumeText: string, jobDescription: string, result: { o
   cache.set(key, { result, timestamp: Date.now() });
 }
 
+// Parse with retry using strict prompt on failure
+async function parseWithRetry(
+  resumeText: string,
+  jobDescription: string | undefined,
+  fullResponse: string,
+  attempt: number = 1,
+  signal?: AbortSignal
+): Promise<OptimizedResume> {
+  try {
+    return parseAIResponse(fullResponse);
+  } catch (parseError) {
+    console.error(`[Optimize] Parse attempt ${attempt} failed:`, parseError);
+
+    if (attempt >= MAX_PARSE_ATTEMPTS) {
+      throw new Error(`简历解析失败，已尝试 ${MAX_PARSE_ATTEMPTS} 次：${parseError instanceof Error ? parseError.message : '未知错误'}`);
+    }
+
+    // Retry with strict prompt using non-streaming call
+    console.log(`[Optimize] Retrying with strict prompt (attempt ${attempt + 1}/${MAX_PARSE_ATTEMPTS})`);
+    const optimizePrompt = OPTIMIZE_PROMPT(resumeText, jobDescription);
+    const retryResponse = await callMiniMaxAPI(optimizePrompt, STRICT_SYSTEM_PROMPT, false, 8192, 2, signal);
+
+    // Collect full response from non-streaming call
+    const decoder = new TextDecoder();
+    const reader = retryResponse.body?.getReader();
+    if (!reader) {
+      throw new Error('重试失败：无法读取响应');
+    }
+
+    let retryFullResponse = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        retryFullResponse += decoder.decode(value);
+      }
+    }
+
+    // Try parsing the retry response
+    return parseWithRetry(resumeText, jobDescription, retryFullResponse, attempt + 1, signal);
+  }
+}
+
 const FETCH_TIMEOUT_MS = 60000; // 60 seconds
 const MAX_RETRIES = 5; // 5 retries
 
 async function fetchWithTimeout(
   url: string,
-  options: RequestInit & { timeoutMs?: number } = {}
+  options: RequestInit & { timeoutMs?: number; externalSignal?: AbortSignal } = {}
 ): Promise<Response> {
-  const { timeoutMs = FETCH_TIMEOUT_MS, ...fetchOptions } = options;
+  const { timeoutMs = FETCH_TIMEOUT_MS, externalSignal, ...fetchOptions } = options;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  // If external signal is provided, wire it to our controller
+  if (externalSignal) {
+    externalSignal.addEventListener('abort', () => controller.abort());
+  }
 
   try {
     const response = await fetch(url, {
@@ -83,7 +131,8 @@ async function callMiniMaxAPI(
   systemPrompt: string = SYSTEM_PROMPT,
   stream: boolean = true,
   maxTokens: number = 8192,
-  retries: number = MAX_RETRIES
+  retries: number = MAX_RETRIES,
+  signal?: AbortSignal
 ): Promise<Response> {
   const apiKey = process.env.MINIMAX_API_KEY;
 
@@ -123,6 +172,7 @@ async function callMiniMaxAPI(
           group_id: process.env.MINIMAX_GROUP_ID,
         }),
         timeoutMs: FETCH_TIMEOUT_MS,
+        externalSignal: signal,
       });
 
       if (!response.ok) {
@@ -157,7 +207,7 @@ async function callMiniMaxAPI(
   // Fallback: try non-stream mode if stream mode failed
   if (stream) {
     console.log('[MiniMax] Stream mode failed, trying non-stream mode...');
-    return callMiniMaxAPI(prompt, systemPrompt, false, maxTokens, 2);
+    return callMiniMaxAPI(prompt, systemPrompt, false, maxTokens, 2, signal);
   }
 
   throw lastError;
@@ -300,14 +350,13 @@ export async function POST(req: NextRequest) {
 
     const readable = new ReadableStream({
       async start(controller) {
+        let shouldRefund = false;
         try {
           // Check cache first
           const cachedResult = getCachedResult(resumeText, jobDescription);
           if (cachedResult) {
             // Cache hit - refund the reserved credits since no API call was made
-            if (creditReservation.success && creditReservation.cost && creditReservation.cost > 0) {
-              await refundCredits(session.user.id, 'OPTIMIZE', creditReservation.cost);
-            }
+            shouldRefund = true;
             // Send cached result immediately
             controller.enqueue(
               sendChunk({
@@ -356,7 +405,7 @@ export async function POST(req: NextRequest) {
 
           let suggestion: ResumeSuggestion | undefined;
           let optimized: OptimizedResume;
-          let atsResult: { score: number; issues: string[]; suggestions: string[] } | undefined;
+          let atsResult: AtsCheckResult | undefined;
 
           // If JD is provided, run suggestion and optimization in PARALLEL
           if (jobDescription && jobDescription.trim()) {
@@ -381,9 +430,11 @@ export async function POST(req: NextRequest) {
                 suggestionPrompt,
                 '你是一位专业的简历优化顾问，擅长分析简历与目标岗位的匹配度。你的职责是识别简历与JD要求的真实差距，给出可执行的改善建议。重要原则：1. 只关注 JD 明确要求的技能、经验、素质 2. 不要编造 JD 未提及的要求（如"公司生态认知"） 3. 差距分析必须具体、可操作、与求职直接相关。请严格按照JSON格式输出，必须包含 add、emphasize、remove 三种类型的建议，每种至少 1-2 条。',
                 true,
-                4096 // Increased for more detailed suggestions
+                4096, // Increased for more detailed suggestions
+                MAX_RETRIES,
+                req.signal
               ),
-              callMiniMaxAPI(optimizePrompt, SYSTEM_PROMPT, true, 8192),
+              callMiniMaxAPI(optimizePrompt, SYSTEM_PROMPT, true, 8192, MAX_RETRIES, req.signal),
             ]);
 
             // Stream optimize response while collecting suggestion text
@@ -425,7 +476,7 @@ export async function POST(req: NextRequest) {
               suggestionError = true;
               suggestion = undefined;
             }
-            optimized = parseAIResponse(fullResponse);
+            optimized = await parseWithRetry(resumeText, jobDescription, fullResponse, 1, req.signal);
 
             // Send suggestion to client
             controller.enqueue(
@@ -464,7 +515,7 @@ export async function POST(req: NextRequest) {
             const atsCheckPromise = Promise.resolve().then(() => analyzeResumeATS(resumeText, jobDescription));
 
             const optimizePrompt = OPTIMIZE_PROMPT(resumeText, jobDescription);
-            const optimizeResponse = await callMiniMaxAPI(optimizePrompt, SYSTEM_PROMPT, true, 8192);
+            const optimizeResponse = await callMiniMaxAPI(optimizePrompt, SYSTEM_PROMPT, true, 8192, MAX_RETRIES, req.signal);
 
             let fullResponse = '';
             for await (const content of streamAIResponse(optimizeResponse)) {
@@ -477,7 +528,7 @@ export async function POST(req: NextRequest) {
               );
             }
 
-            optimized = parseAIResponse(fullResponse);
+            optimized = await parseWithRetry(resumeText, jobDescription, fullResponse, 1, req.signal);
 
             // Wait for parallel ATS check
             atsResult = await atsCheckPromise;
@@ -544,10 +595,7 @@ export async function POST(req: NextRequest) {
           controller.close();
         } catch (error) {
           console.error('Stream error:', error);
-          // Refund credits if optimization failed
-          if (creditReservation.success && creditReservation.cost && creditReservation.cost > 0) {
-            await refundCredits(session.user.id, 'OPTIMIZE', creditReservation.cost);
-          }
+          shouldRefund = true;
           controller.enqueue(
             sendChunk({
               type: 'error',
@@ -556,6 +604,17 @@ export async function POST(req: NextRequest) {
             })
           );
           controller.close();
+        } finally {
+          // Refund credits if needed (cache hit or error)
+          if (shouldRefund && creditReservation.success && creditReservation.cost && creditReservation.cost > 0) {
+            try {
+              await refundCredits(session.user.id, 'OPTIMIZE', creditReservation.cost);
+            } catch (refundError) {
+              console.error('[Optimize] Refund failed:', refundError);
+              // Refund failed - try to notify user via error log
+              // The error is already sent to client via the error chunk above
+            }
+          }
         }
       },
     });

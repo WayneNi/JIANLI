@@ -91,6 +91,10 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
     setSuggestionError(false);
     setTimeoutError(false);
 
+    // Declare timeout tracking variables outside try block for finally access
+    let bytesReceived = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
     try {
       const response = await fetch('/api/optimize', {
         method: 'POST',
@@ -115,8 +119,7 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
       }
 
       const TIMEOUT_MS = 90000;
-      let bytesReceived = false;
-      const timeoutId: ReturnType<typeof setTimeout> = setTimeout(() => {
+      timeoutId = setTimeout(() => {
         if (!bytesReceived) {
           reader.cancel();
           setErrorMessage('网络连接超时，请检查网络后重试');
@@ -131,7 +134,10 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
 
         if (value && value.length > 0) {
           bytesReceived = true;
-          clearTimeout(timeoutId);
+          if (timeoutId !== undefined) {
+            clearTimeout(timeoutId);
+            timeoutId = undefined;
+          }
         }
 
         const chunk = decoder.decode(value);
@@ -186,7 +192,9 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
       setErrorMessage(errMsg);
       setStatus('error');
     } finally {
-      clearTimeout(timeoutId);
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
       setIsOptimizing(false);
     }
   }, [resumeText, jobDescription]);

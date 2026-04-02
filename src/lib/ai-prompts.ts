@@ -1,6 +1,35 @@
 // AI Prompts for resume optimization
 
-export const SYSTEM_PROMPT = `【重要】只返回纯JSON，不要其他文字。JSON格式：{"summary":"...","experience":[{"company":"...","position":"...","duration":"...","description":"...","starFormatted":"..."}],"skills":{"technical":[],"soft":[],"languages":[]},"education":[{"school":"...","degree":"...","duration":"...","gpa":"..."}]}`;
+// Maximum number of parse retry attempts
+export const MAX_PARSE_ATTEMPTS = 2;
+
+// Strict prompt for retry attempts - more explicit constraints
+export const STRICT_SYSTEM_PROMPT = `【重要】必须严格遵循以下JSON格式返回，不要包含任何其他文字或解释。
+
+必须返回的字段：
+- summary: 字符串，个人简介
+- experience: 数组，每项必须包含 company, position, duration, description, starFormatted（可选）字段
+- skills: 对象，必须包含 technical, soft, languages 三个数组字段
+- education: 数组，每项必须包含 school, degree, duration 字段
+- contact: 对象（可选），包含 name, email, phone 字段
+
+【强制要求】
+1. experience 数组必须至少包含一段工作经历
+2. skills.technical 数组必须包含至少一项技能
+3. 只返回上述字段，禁止添加其他字段
+4. 如果无法从简历中提取某字段，返回空数组或空字符串，而非编造内容
+
+JSON格式示例：
+{"summary":"","experience":[{"company":"公司名","position":"职位","duration":"时间","description":"工作描述","starFormatted":"STAR格式描述"}],"skills":{"technical":["技能1"],"soft":["软技能"],"languages":["语言"]},"education":[{"school":"学校","degree":"学位","duration":"时间","gpa":""}]}`;
+
+export const SYSTEM_PROMPT = `【重要】只返回纯JSON，不要其他文字。JSON格式必须包含以下字段：
+- summary: 字符串
+- experience: 数组，每项包含 company, position, duration, description, starFormatted（可选）
+- skills: 对象，包含 technical, soft, languages 三个数组
+- education: 数组，每项包含 school, degree, duration, gpa（可选）
+- contact: 对象（可选），包含 name, email, phone
+
+【重要】experience 数组必须至少有一项，skills.technical 必须至少有一项。如果无法从简历中提取某个字段，返回空数组或空字符串，禁止编造内容。禁止添加上述未列出的字段。`;
 
 export const STATUS_MESSAGES: Record<string, string> = {
   parsing: '正在解析简历文件...',
@@ -62,7 +91,10 @@ ${jobDescription}
 
 请按照系统提示中的要求优化简历内容。
 
-**重要：必须返回纯 JSON 格式，不要包含任何解释性文本或markdown代码块。**`;
+**重要**：
+1. 必须返回纯 JSON 格式，不要包含任何解释性文本或markdown代码块
+2. 如果无法从简历中提取某个工作经历或技能字段，返回空数组（[]）而非编造内容
+3. 只能基于简历中实际存在的内容进行优化和改写，不要添加简历中未提及的信息`;
 
 // ATS Check Prompt
 export const ATS_CHECK_PROMPT = (resumeText: string, jobDescription?: string) => `

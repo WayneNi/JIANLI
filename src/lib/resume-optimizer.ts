@@ -1,6 +1,7 @@
 // Resume optimization utilities
 
 import type { OptimizedResume, ResumeSuggestion } from '@/types/resume';
+import { MAX_PARSE_ATTEMPTS, STRICT_SYSTEM_PROMPT } from '@/lib/ai-prompts';
 
 /**
  * Preprocess raw response to extract JSON
