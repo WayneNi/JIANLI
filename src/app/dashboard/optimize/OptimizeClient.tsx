@@ -9,6 +9,7 @@ import { PreviewPanel } from '@/components/resume/PreviewPanel';
 import { JobDescriptionInput } from '@/components/resume/JobDescriptionInput';
 import { CompareView } from '@/components/resume/CompareView';
 import { InterviewQuestionsGenerator } from '@/components/resume/InterviewQuestions';
+import { GreetingMessage } from '@/components/resume/GreetingMessage';
 import { Sparkles, FileText, Eye, ArrowLeft, Coins, Crown, AlertCircle } from 'lucide-react';
 import type { OptimizeStatus, StreamChunk, OptimizedResume } from '@/types/resume';
 
@@ -434,6 +435,12 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
                     重新生成
                   </Button>
                 </div>
+
+                {/* 打招呼语 */}
+                <GreetingMessage
+                  resumeText={resumeText}
+                  jobDescription={jobDescription}
+                />
 
                 {/* Interview Questions */}
                 <Card>
