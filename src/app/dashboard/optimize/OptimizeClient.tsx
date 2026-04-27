@@ -293,14 +293,12 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
         {/* Two Column Layout */}
         <div className="grid lg:grid-cols-12 gap-6">
           {/* Left: Upload + JD + Tips */}
-          <div className="lg:col-span-5 col-span-12 space-y-6">
+          <div className="lg:col-span-5 col-span-12 space-y-4">
             {/* Upload Card */}
             <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-violet-600" />
-                  </div>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <FileText className="w-4 h-4" />
                   上传简历
                 </CardTitle>
               </CardHeader>
@@ -345,10 +343,9 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
             <Card className="bg-gradient-to-br from-violet-50 to-pink-50 border-violet-100">
               <CardContent className="p-4">
                 <h4 className="font-medium text-gray-900 mb-2">优化小贴士</h4>
-                <ul className="text-sm text-gray-600 space-y-1.5">
+                <ul className="text-sm text-gray-600 space-y-1">
                   <li>• PDF 格式解析效果最佳</li>
                   <li>• 提供目标岗位 JD 可获得更精准匹配</li>
-                  <li>• 优化后可对比原文查看改动</li>
                 </ul>
               </CardContent>
             </Card>
