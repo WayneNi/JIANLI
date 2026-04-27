@@ -2,32 +2,15 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UploadZone } from '@/components/resume/UploadZone';
 import { PreviewPanel } from '@/components/resume/PreviewPanel';
 import { JobDescriptionInput } from '@/components/resume/JobDescriptionInput';
-import { DownloadOptions } from '@/components/resume/DownloadOptions';
 import { CompareView } from '@/components/resume/CompareView';
-import { CoverLetterGenerator } from '@/components/resume/CoverLetter';
 import { InterviewQuestionsGenerator } from '@/components/resume/InterviewQuestions';
 import { Sparkles, FileText, Eye, ArrowLeft, Coins, Crown, AlertCircle } from 'lucide-react';
 import type { OptimizeStatus, StreamChunk, OptimizedResume } from '@/types/resume';
-
-function extractTargetRole(jobDescription: string): string {
-  if (!jobDescription) return '';
-  const patterns = [
-    /(?:岗位|职位|应聘|申请|目标)[：:]\s*(.+)/i,
-    /^(.+?)(?:工程师|经理|总监|专员|助理|专家)/,
-  ];
-  for (const pattern of patterns) {
-    const match = jobDescription.match(pattern);
-    if (match) return match[1].trim();
-  }
-  return '';
-}
 
 interface OptimizeClientProps {
   initialCredits: number;
@@ -38,7 +21,6 @@ interface OptimizeClientProps {
 }
 
 export function OptimizeClient({ initialCredits, isLifetime, email, userName, userAvatar }: OptimizeClientProps) {
-  const router = useRouter();
   const [resumeText, setResumeText] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -46,14 +28,12 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
   const [streamData, setStreamData] = useState<StreamChunk[]>([]);
   const [optimizedResume, setOptimizedResume] = useState<OptimizedResume | null>(null);
   const [showCompare, setShowCompare] = useState(false);
-  const [activeTab, setActiveTab] = useState<'cover' | 'interview'>('cover');
   const [credits, setCredits] = useState(initialCredits);
   const [showCreditError, setShowCreditError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [suggestionError, setSuggestionError] = useState(false);
   const [resetTrigger, setResetTrigger] = useState(0);
   const [hasJobDescription, setHasJobDescription] = useState(false);
-  const [timeoutError, setTimeoutError] = useState(false);
 
   const handleFileSelect = useCallback((file: File, text: string) => {
     setResumeText(text);
@@ -66,7 +46,6 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
     setSuggestionError(false);
     setResetTrigger(prev => prev + 1);
     setHasJobDescription(false);
-    setTimeoutError(false);
   }, []);
 
   const resetOptimizationState = useCallback(() => {
@@ -89,7 +68,6 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
     setShowCreditError(false);
     setHasJobDescription(!!jobDescription.trim());
     setSuggestionError(false);
-    setTimeoutError(false);
 
     // Declare timeout tracking variables outside try block for finally access
     let bytesReceived = false;
@@ -312,10 +290,10 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
           </div>
         )}
 
-        {/* Three Column Layout */}
+        {/* Two Column Layout */}
         <div className="grid lg:grid-cols-12 gap-6">
-          {/* Left Column - Upload & JD */}
-          <div className="lg:col-span-4 space-y-6">
+          {/* Left: Upload + JD + Tips */}
+          <div className="lg:col-span-5 col-span-12 space-y-6">
             {/* Upload Card */}
             <Card>
               <CardHeader className="pb-4">
@@ -376,8 +354,9 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
             </Card>
           </div>
 
-          {/* Middle Column - Preview */}
-          <div className="lg:col-span-4">
+          {/* Right: Preview + Results */}
+          <div className="lg:col-span-7 col-span-12 space-y-6">
+            {/* Preview Panel */}
             <PreviewPanel
               isOptimizing={isOptimizing}
               streamData={streamData}
@@ -390,13 +369,10 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
               hasJobDescription={hasJobDescription}
               suggestionError={suggestionError}
             />
-          </div>
 
-          {/* Right Column - Results */}
-          <div className="lg:col-span-4 space-y-6">
             {optimizedResume ? (
               <>
-                {/* Success Card */}
+                {/* Success Banner */}
                 <Card className="border-green-200 bg-green-50">
                   <CardContent className="p-4 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
@@ -439,59 +415,40 @@ export function OptimizeClient({ initialCredits, isLifetime, email, userName, us
                   </Card>
                 )}
 
-                {/* Compare Button */}
-                <Button
-                  variant="outline"
-                  onClick={() => setShowCompare(true)}
-                  className="w-full gap-2 border-violet-200 text-violet-700 hover:bg-violet-50"
-                >
-                  <Eye className="w-4 h-4" />
-                  对比原始简历
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCompare(true)}
+                    className="flex-1 gap-2 border-violet-200 text-violet-700 hover:bg-violet-50"
+                  >
+                    <Eye className="w-4 h-4" />
+                    对比原始简历
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      resetOptimizationState();
+                      handleOptimize();
+                    }}
+                    className="flex-1 gap-2 border-violet-200 text-violet-700 hover:bg-violet-50"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    重新生成
+                  </Button>
+                </div>
 
-                {/* Regenerate Button */}
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    resetOptimizationState();
-                    handleOptimize();
-                  }}
-                  className="w-full gap-2 border-violet-200 text-violet-700 hover:bg-violet-50"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  重新生成
-                </Button>
-
-                {/* Download Options */}
+                {/* Interview Questions */}
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base">下载优化结果</CardTitle>
+                    <CardTitle className="text-base">面试问题</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <DownloadOptions resume={optimizedResume} targetRole={extractTargetRole(jobDescription)} />
+                    <InterviewQuestionsGenerator
+                      resumeText={resumeText}
+                      jobDescription={jobDescription}
+                    />
                   </CardContent>
-                </Card>
-
-                {/* Tabs - Cover Letter & Interview */}
-                <Card>
-                  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="cover">求职信</TabsTrigger>
-                      <TabsTrigger value="interview">面试问题</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="cover" className="p-4">
-                      <CoverLetterGenerator
-                        resumeText={resumeText}
-                        jobDescription={jobDescription}
-                      />
-                    </TabsContent>
-                    <TabsContent value="interview" className="p-4">
-                      <InterviewQuestionsGenerator
-                        resumeText={resumeText}
-                        jobDescription={jobDescription}
-                      />
-                    </TabsContent>
-                  </Tabs>
                 </Card>
               </>
             ) : (
