@@ -37,7 +37,7 @@ import { AtsScore } from './AtsScore';
 import { COLORS } from '@/lib/theme/colors';
 
 // Tab types
-type TabId = 'summary' | 'experience' | 'skills-education' | 'ats' | 'suggestions';
+type TabId = 'experience' | 'skills-education' | 'ats' | 'suggestions';
 
 interface TabConfig {
   id: TabId;
@@ -46,11 +46,10 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
-  { id: 'summary', label: '摘要', icon: FileText },
+  { id: 'suggestions', label: '优化建议', icon: Lightbulb },
   { id: 'experience', label: '工作经历', icon: Briefcase },
   { id: 'skills-education', label: '技能&教育', icon: Award },
   { id: 'ats', label: 'ATS评分', icon: BarChart2 },
-  { id: 'suggestions', label: '优化建议', icon: Lightbulb },
 ];
 
 interface PreviewPanelProps {
@@ -78,7 +77,7 @@ export function PreviewPanel({
   hasJobDescription = false,
   suggestionError = false,
 }: PreviewPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('summary');
+  const [activeTab, setActiveTab] = useState<TabId>('suggestions');
   const [optimizedResume, setOptimizedResume] =
     useState<OptimizedResume | null>(resumeProp || null);
   const [suggestion, setSuggestion] = useState<ResumeSuggestion | null>(null);
@@ -113,7 +112,6 @@ export function PreviewPanel({
       setEditingSection(null);
       setEditingIndex(null);
       setEditValue('');
-      setStreamData([]);
     }
   }, [resetTrigger]);
 
@@ -187,9 +185,6 @@ export function PreviewPanel({
     const updated = { ...optimizedResume };
 
     switch (editingSection) {
-      case 'summary':
-        updated.summary = editValue;
-        break;
       case 'experience':
         if (editingIndex !== null && updated.experience[editingIndex]) {
           updated.experience = [...updated.experience];
@@ -305,159 +300,6 @@ export function PreviewPanel({
       </div>
     </div>
   );
-
-  // Render Summary Tab
-  const renderSummaryTab = () => {
-    // Use session user info as fallback when resume contact is missing
-    const displayName = optimizedResume?.contact?.name || userName || '未设置姓名';
-    const displayEmail = optimizedResume?.contact?.email || userEmail || '未设置邮箱';
-    const avatarInitial = displayName.charAt(0).toUpperCase();
-
-    return (
-    <div className="space-y-4">
-      {/* Contact Header */}
-      <div className="flex items-center gap-3 mb-4">
-        {userAvatar ? (
-          <img
-            src={userAvatar}
-            alt={displayName}
-            className="w-12 h-12 rounded-full object-cover"
-          />
-        ) : (
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: `${COLORS.primary}15` }}
-          >
-            <span className="text-lg font-semibold" style={{ color: COLORS.primary }}>
-              {avatarInitial}
-            </span>
-          </div>
-        )}
-        <div className="min-w-0">
-          <p className="font-semibold truncate" style={{ color: COLORS.text }}>
-            {displayName}
-          </p>
-          <p className="text-sm truncate" style={{ color: COLORS.textMuted }}>
-            {displayEmail}
-          </p>
-        </div>
-      </div>
-
-      {/* ATS Overview Cards */}
-      <div className="grid grid-cols-3 gap-3">
-        {/* ATS Grade Card */}
-        <button
-          onClick={() => setActiveTab('ats')}
-          className="rounded-xl p-4 text-center transition-transform hover:scale-[1.02]"
-          style={{
-            background: `linear-gradient(135deg, ${getAtsGradeColor(atsCheck?.score || 0)}20, ${getAtsGradeColor(atsCheck?.score || 0)}10)`,
-            border: `1px solid ${getAtsGradeColor(atsCheck?.score || 0)}40`,
-          }}
-        >
-          <div
-            className="text-2xl font-bold"
-            style={{ color: getAtsGradeColor(atsCheck?.score || 0) }}
-          >
-            {getAtsGrade(atsCheck?.score || 0)}
-          </div>
-          <div className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
-            ATS等级
-          </div>
-        </button>
-
-        {/* Match Score Card */}
-        <button
-          onClick={() => setActiveTab('suggestions')}
-          className="rounded-xl p-4 text-center transition-transform hover:scale-[1.02]"
-          style={{
-            background: `linear-gradient(135deg, ${COLORS.primary}20, ${COLORS.primary}10)`,
-            border: `1px solid ${COLORS.primary}40`,
-          }}
-        >
-          <div className="text-2xl font-bold" style={{ color: COLORS.primary }}>
-            {suggestion?.matchScore || 0}
-          </div>
-          <div className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
-            匹配分数
-          </div>
-        </button>
-
-        {/* Issues Card */}
-        <button
-          onClick={() => setActiveTab('ats')}
-          className="rounded-xl p-4 text-center transition-transform hover:scale-[1.02]"
-          style={{
-            background: 'linear-gradient(135deg, #f59e0b20, #f59e0b10)',
-            border: '1px solid #f59e0b40',
-          }}
-        >
-          <div className="text-2xl font-bold" style={{ color: '#f59e0b' }}>
-            {atsCheck?.issues?.length || 0}
-          </div>
-          <div className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
-            待改进项
-          </div>
-        </button>
-      </div>
-
-      {/* Summary Content */}
-      <div
-        className="rounded-lg p-4 glass-card"
-        style={{ backgroundColor: COLORS.surfaceElevated, border: `1px solid ${COLORS.border}` }}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <h3
-            className="font-semibold flex items-center gap-2"
-            style={{ color: COLORS.text }}
-          >
-            <FileText className="h-4 w-4" style={{ color: COLORS.primary }} />
-            个人简介
-          </h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              startEdit('summary', 0, optimizedResume?.summary || '')
-            }
-            className="h-6 px-2"
-            style={{ color: COLORS.primary }}
-          >
-            <Edit2 className="h-3 w-3" />
-          </Button>
-        </div>
-        {isEditing && editingSection === 'summary' ? (
-          <div className="space-y-2">
-            <Textarea
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              className="min-h-[100px]"
-              placeholder="编辑个人简介..."
-              style={{ backgroundColor: COLORS.surface, color: COLORS.text, borderColor: COLORS.border }}
-            />
-            <div className="flex gap-2">
-              <Button size="sm" onClick={saveEdit} className="gap-1" style={{ backgroundColor: COLORS.primary, color: COLORS.bg }}>
-                <Save className="h-3 w-3" /> 保存
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={cancelEdit}
-                className="gap-1"
-                style={{ borderColor: COLORS.border, color: COLORS.textMuted }}
-              >
-                <X className="h-3 w-3" /> 取消
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <p className="leading-7" style={{ color: COLORS.textMuted }}>
-            {optimizedResume?.summary}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-  };
 
   // Render Experience Tab
   const renderExperienceTab = () => (
@@ -989,12 +831,11 @@ export function PreviewPanel({
         style={{ backgroundColor: COLORS.surface }}
       >
         {/* Loading State */}
-        {isOptimizing && activeTab === 'summary' && !optimizedResume && renderSkeleton()}
+        {isOptimizing && !optimizedResume && renderSkeleton()}
 
         {/* Render content based on active tab */}
         {!isOptimizing || optimizedResume ? (
           <>
-            {activeTab === 'summary' && renderSummaryTab()}
             {activeTab === 'experience' && renderExperienceTab()}
             {activeTab === 'skills-education' && renderSkillsEducationTab()}
             {activeTab === 'ats' && renderAtsTab()}
