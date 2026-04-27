@@ -591,8 +591,21 @@ export function PreviewPanel({
   // Render Suggestions Tab
   const renderSuggestionsTab = () => (
     <div className="space-y-4">
-      {/* Match Score */}
-      {suggestion && suggestion.matchScore > 0 ? (
+      {/* Error State - takes precedence */}
+      {localSuggestionError || suggestionError ? (
+        <div
+          className="rounded-lg p-4"
+          style={{ backgroundColor: `${COLORS.primary}10`, border: `1px solid ${COLORS.primary}30` }}
+        >
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.primary }} />
+            <p className="text-sm" style={{ color: COLORS.text }}>
+              简历改善建议生成失败，请重试或稍后再试
+            </p>
+          </div>
+        </div>
+      ) : suggestion && suggestion.matchScore > 0 ? (
+        /* Match Score */
         <div
           className="rounded-xl p-4"
           style={{
@@ -625,6 +638,7 @@ export function PreviewPanel({
           </p>
         </div>
       ) : (
+        /* No JD State */
         <div
           className="rounded-lg p-4"
           style={{ backgroundColor: `${COLORS.primary}10`, border: `1px solid ${COLORS.primary}30` }}
@@ -632,8 +646,8 @@ export function PreviewPanel({
           <div className="flex items-start gap-2">
             <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: COLORS.primary }} />
             <p className="text-sm" style={{ color: COLORS.text }}>
-              {hasJobDescription && localSuggestionError
-                ? '简历改善建议生成失败，请重试或稍后再试'
+              {hasJobDescription
+                ? '正在生成优化建议...'
                 : '未填写目标岗位JD，请填写后可获得详细的匹配度分析和改善建议'}
             </p>
           </div>
